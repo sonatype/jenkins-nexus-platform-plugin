@@ -16,7 +16,6 @@ import javax.annotation.Nonnull
 import javax.annotation.Nullable
 import javax.annotation.ParametersAreNonnullByDefault
 
-
 import org.sonatype.nexus.ci.config.NxiqConfiguration
 import org.sonatype.nexus.ci.util.FormUtil
 import org.sonatype.nexus.ci.util.IqUtil
