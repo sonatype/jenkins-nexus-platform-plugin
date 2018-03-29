@@ -49,7 +49,7 @@ class IqPolicyEvaluatorUtil
               log: loggerBridge))
 
       def verified = iqClient.verifyOrCreateApplication(applicationId)
-      checkArgument(verified, 'Argument iqApplication ' + applicationId + ' failed verification.')
+      checkArgument(verified, 'Argument iqApplication ' + applicationId + ' is invalid.')
 
       def envVars = run.getEnvironment(listener)
       def expandedScanPatterns = getScanPatterns(iqPolicyEvaluator.iqScanPatterns, envVars)

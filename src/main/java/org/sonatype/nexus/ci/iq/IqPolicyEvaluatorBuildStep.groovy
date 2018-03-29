@@ -54,7 +54,7 @@ class IqPolicyEvaluatorBuildStep
   Boolean failBuildOnNetworkError
 
   String jobCredentialsId
-  
+
   IqApplication getIqApplication() {
     if(iqApplication != null) {
       new SelectedApplication(iqApplication)
