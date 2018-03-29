@@ -44,7 +44,9 @@ class IqPolicyEvaluatorBuildStep
 {
   String iqStage
 
-  IqApplication iqApplication
+  String iqApplication
+
+  IqApplication iqApplicationV2
 
   List<ScanPattern> iqScanPatterns
 
@@ -53,6 +55,16 @@ class IqPolicyEvaluatorBuildStep
   Boolean failBuildOnNetworkError
 
   String jobCredentialsId
+
+  @Deprecated
+  IqApplication getIqApplication() {
+    if(iqApplication != null) {
+      new SelectedApplication(iqApplication)
+    }
+    else {
+      iqApplicationV2
+    }
+  }
 
   @DataBoundConstructor
   @SuppressWarnings('ParameterCount')
@@ -68,7 +80,7 @@ class IqPolicyEvaluatorBuildStep
     this.iqScanPatterns = iqScanPatterns
     this.moduleExcludes = moduleExcludes
     this.iqStage = iqStage
-    this.iqApplication = iqApplication
+    this.iqApplicationV2 = iqApplication
   }
 
   @Override
@@ -83,6 +95,7 @@ class IqPolicyEvaluatorBuildStep
       extends BuildStepDescriptor<Builder>
       implements IqPolicyEvaluatorDescriptor
   {
+
     @Override
     String getDisplayName() {
       Messages.IqPolicyEvaluation_DisplayName()

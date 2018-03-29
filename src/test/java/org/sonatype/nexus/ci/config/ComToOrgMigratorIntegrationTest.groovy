@@ -18,6 +18,7 @@ import com.sonatype.nexus.api.iq.internal.InternalIqClient
 import com.sonatype.nexus.api.iq.internal.InternalIqClientBuilder
 import com.sonatype.nexus.api.iq.scan.ScanResult
 
+import org.sonatype.nexus.ci.iq.IqPolicyEvaluatorBuildStep
 import org.sonatype.nexus.ci.nxrm.ComponentUploader
 import org.sonatype.nexus.ci.nxrm.ComponentUploaderFactory
 import org.sonatype.nexus.ci.nxrm.MavenPackage
@@ -89,9 +90,35 @@ class ComToOrgMigratorIntegrationTest
       nxrmConfiguration.credentialsId == 'user'
   }
 
+  /*def 'it migrates a Freestyle IQ job'() {
+    when:
+      def project = (FreeStyleProject)jenkins.jenkins.getItem('Freestyle-IQ')
+      def build = project.scheduleBuild2(0).get()
+
+    then: 'the application is scanned and evaluated'
+      1 * iqClient.verifyOrCreateApplication(*_) >> true
+      1 * iqClient.scan(*_) >> new ScanResult(new Scan(), File.createTempFile('dummy-scan', '.xml.gz'))
+      1 * iqClient.evaluateApplication('sample-app', 'build', _) >> new ApplicationPolicyEvaluation(0, 1, 2, 3, [],
+          'http://server/link/to/report')
+
+    then: 'the return code is successful'
+      jenkins.assertBuildStatusSuccess(build)
+  }*/
+
   def 'it migrates a Freestyle IQ job'() {
     when:
       def project = (FreeStyleProject)jenkins.jenkins.getItem('Freestyle-IQ')
+      //def buildStep = (IqPolicyEvaluatorBuildStep)project.builders[0]
+
+   /* then: 'the fields are properly migrated'
+      buildStep.iqStage == 'build'
+      //buildStep.iqApplication.applicationId == 'sample-app'
+      buildStep.failBuildOnNetworkError
+      buildStep.jobCredentialsId == 'user2'
+      buildStep.iqScanPatterns.size() == 1
+      buildStep.iqScanPatterns[0].scanPattern == 'target/*.jar'
+*/
+    and: 'a build is run'
       def build = project.scheduleBuild2(0).get()
 
     then: 'the application is scanned and evaluated'

@@ -37,7 +37,7 @@ class IqPolicyEvaluatorUtil
                                                     final TaskListener listener)
   {
     try {
-      String applicationId = iqPolicyEvaluator.getIqApplication()?.applicationId
+      String applicationId = ((IqApplication)iqPolicyEvaluator.getIqApplication())?.applicationId
 
       checkArgument(iqPolicyEvaluator.iqStage && applicationId, 'Arguments iqApplication and iqStage are mandatory')
 
@@ -50,8 +50,8 @@ class IqPolicyEvaluatorUtil
 
       def verified = iqClient.verifyOrCreateApplication(applicationId)
       checkArgument(verified,
-          'Argument iqApplication failed verify or create. To Fix, Either the ' + applicationId +
-              'app exists and correct or Auto Application Creation is configured.')
+          'Argument iqApplication ' + applicationId +
+              ' failed verification.')
 
       def envVars = run.getEnvironment(listener)
       def expandedScanPatterns = getScanPatterns(iqPolicyEvaluator.iqScanPatterns, envVars)
