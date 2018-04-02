@@ -53,19 +53,6 @@ class IqPolicyEvaluatorBuildStep
 
   String jobCredentialsId
 
-
-  /**
-   * Used as a migration path from string to IqApplication
-   */
-  /*IqApplication getIqApplication() {
-    if(iqApplication != null) {
-      new SelectedApplication(iqApplication)
-    }
-    else {
-      iqApplicationV2
-    }
-  }*/
-
   @DataBoundConstructor
   @SuppressWarnings('ParameterCount')
   IqPolicyEvaluatorBuildStep(final String iqStage,
