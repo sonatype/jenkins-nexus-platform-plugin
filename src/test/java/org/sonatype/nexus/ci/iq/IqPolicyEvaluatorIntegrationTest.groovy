@@ -354,6 +354,47 @@ class IqPolicyEvaluatorIntegrationTest
       build.getLog(99).contains('java.lang.IllegalArgumentException: Arguments iqApplication and iqStage are mandatory')
   }
 
+  def 'Freestyle build should fail when verify is false'() {
+    given: 'a jenkins project'
+      def failBuildOnNetworkError = false
+      FreeStyleProject project = jenkins.createFreeStyleProject()
+      project.buildersList.add(new IqPolicyEvaluatorBuildStep('stage', new SelectedApplication('app'), [], [], failBuildOnNetworkError, 'cred-id'))
+      configureJenkins()
+
+    when: 'the build is scheduled'
+      def build = project.scheduleBuild2(0).get()
+
+    then: 'the application is scanned and evaluated'
+      1 * iqClient.verifyOrCreateApplication(*_) >> false
+
+    then: 'the build fails'
+      jenkins.assertBuildStatus(Result.FAILURE, build)
+  }
+
+  def 'Pipeline build should fail and stop execution when verify is false'() {
+    setup: 'global server URL and globally configured credentials'
+      WorkflowJob project = jenkins.createProject(WorkflowJob)
+      configureJenkins()
+
+    when: 'the nexus policy evaluator is executed'
+      project.definition = new CpsFlowDefinition('node {\n' +
+          'writeFile file: \'dummy.txt\', text: \'dummy\'\n' +
+          'def result = nexusPolicyEvaluation failBuildOnNetworkError: false, iqApplication: \'app\', ' +
+          'iqStage: \'stage\'\n' +
+          'echo "next" \n' +
+          '}\n')
+      def build = project.scheduleBuild2(0).get()
+
+    then: 'the application is scanned and evaluated'
+      1 * iqClient.verifyOrCreateApplication(*_) >> false
+
+    and: 'the build fails'
+      jenkins.assertBuildStatus(Result.FAILURE, build)
+      with(build.getLog(100)) {
+        !it.contains('next')
+      }
+  }
+
   def configureJenkins() {
     nxiqConfiguration = [new NxiqConfiguration('http://server/url', 'cred-id')]
     GlobalNexusConfiguration.globalNexusConfiguration.iqConfigs = nxiqConfiguration
