@@ -43,9 +43,7 @@ class IqPolicyEvaluatorBuildStep
 {
   String iqStage
 
-  String iqApplication
-
-  IqApplication iqApplicationV2
+  IqApplication iqApplication
 
   List<ScanPattern> iqScanPatterns
 
@@ -55,14 +53,18 @@ class IqPolicyEvaluatorBuildStep
 
   String jobCredentialsId
 
-  IqApplication getIqApplication() {
+
+  /**
+   * Used as a migration path from string to IqApplication
+   */
+  /*IqApplication getIqApplication() {
     if(iqApplication != null) {
       new SelectedApplication(iqApplication)
     }
     else {
       iqApplicationV2
     }
-  }
+  }*/
 
   @DataBoundConstructor
   @SuppressWarnings('ParameterCount')
@@ -78,7 +80,7 @@ class IqPolicyEvaluatorBuildStep
     this.iqScanPatterns = iqScanPatterns
     this.moduleExcludes = moduleExcludes
     this.iqStage = iqStage
-    this.iqApplicationV2 = iqApplication
+    this.iqApplication = iqApplication
   }
 
   @Override

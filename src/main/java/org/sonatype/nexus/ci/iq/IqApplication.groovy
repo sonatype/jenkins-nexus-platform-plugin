@@ -12,6 +12,7 @@
  */
 package org.sonatype.nexus.ci.iq
 
+import com.thoughtworks.xstream.converters.basic.AbstractSingleValueConverter
 import hudson.model.Describable
 import hudson.model.Descriptor
 import hudson.util.FormValidation
@@ -24,14 +25,28 @@ abstract class IqApplication
 {
   String applicationId
 
-  @SuppressWarnings('AbstractClassWithPublicConstructor')
-  IqApplication(final String applicationId) {
+  protected IqApplication(final String applicationId) {
     this.applicationId = applicationId
   }
 
   @Override
   Descriptor<IqApplication> getDescriptor() {
     return Jenkins.getInstance().getDescriptorOrDie(this.getClass())
+  }
+
+  /**
+   * Provide Migration path from String to IqApplication
+   */
+  static final class ConverterImpl
+      extends AbstractSingleValueConverter
+  {
+    boolean canConvert(Class clazz) {
+      return clazz == IqApplication.class
+    }
+
+    Object fromString(String str) {
+      return new SelectedApplication(str)
+    }
   }
 
   static class IqApplicationDescriptor

@@ -17,6 +17,7 @@ import org.sonatype.nexus.ci.util.IqUtil
 import hudson.Extension
 import hudson.model.Job
 import hudson.util.ListBoxModel
+import org.jenkinsci.Symbol
 import org.kohsuke.stapler.AncestorInPath
 import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.QueryParameter
@@ -29,6 +30,7 @@ class SelectedApplication
     super(applicationId)
   }
 
+  @Symbol('selectedApplication')
   @Extension
   static class DescriptorImpl
       extends IqApplication.IqApplicationDescriptor
