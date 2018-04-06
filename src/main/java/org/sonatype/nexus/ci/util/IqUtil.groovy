@@ -17,7 +17,6 @@ import javax.annotation.Nullable
 import com.sonatype.nexus.api.exception.IqClientException
 import com.sonatype.nexus.api.iq.ApplicationSummary
 import com.sonatype.nexus.api.iq.Context
-import com.sonatype.nexus.api.iq.IqClient
 
 import org.sonatype.nexus.ci.config.Messages
 import org.sonatype.nexus.ci.config.NxiqConfiguration
