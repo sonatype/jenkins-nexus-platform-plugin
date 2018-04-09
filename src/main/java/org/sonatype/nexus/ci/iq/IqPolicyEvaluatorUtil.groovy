@@ -12,6 +12,7 @@
  */
 package org.sonatype.nexus.ci.iq
 
+import com.sonatype.nexus.api.exception.IqClientException
 import com.sonatype.nexus.api.iq.ApplicationPolicyEvaluation
 
 import org.sonatype.nexus.ci.config.GlobalNexusConfiguration
@@ -55,18 +56,16 @@ class IqPolicyEvaluatorUtil
       def expandedScanPatterns = getScanPatterns(iqPolicyEvaluator.iqScanPatterns, envVars)
       def expandedModuleExcludes = getExpandedModuleExcludes(iqPolicyEvaluator.moduleExcludes, envVars)
 
-      def proprietaryConfig =
-          rethrowNetworkErrors {
-            iqClient.getProprietaryConfigForApplicationEvaluation(applicationId)
-          }
+      def proprietaryConfig = iqClient.getProprietaryConfigForApplicationEvaluation(applicationId)
+
       def remoteScanner = RemoteScannerFactory.
           getRemoteScanner(applicationId, iqPolicyEvaluator.iqStage, expandedScanPatterns, expandedModuleExcludes,
               workspace, proprietaryConfig, loggerBridge, GlobalNexusConfiguration.instanceId)
       def scanResult = launcher.getChannel().call(remoteScanner).copyToLocalScanResult()
 
-      def evaluationResult = rethrowNetworkErrors {
-        iqClient.evaluateApplication(applicationId, iqPolicyEvaluator.iqStage, scanResult)
-      }
+      def evaluationResult = iqClient.
+          evaluateApplication(applicationId, iqPolicyEvaluator.iqStage, scanResult)
+
 
       def healthAction = new PolicyEvaluationHealthAction(run, evaluationResult)
       run.addAction(healthAction)
@@ -80,37 +79,22 @@ class IqPolicyEvaluatorUtil
 
       return evaluationResult
     }
-    catch (IqNetworkException e) {
+    catch (IqClientException e) {
       return handleNetworkException(iqPolicyEvaluator.failBuildOnNetworkError, e, listener, run)
     }
   }
 
-  private static handleNetworkException(final boolean failBuildOnNetworkError, final IqNetworkException e,
-                                    final TaskListener listener, final Run run)
+  private static handleNetworkException(final Boolean failBuildOnNetworkError, final IqClientException e,
+                                        final TaskListener listener, final Run run)
   {
-    if (failBuildOnNetworkError) {
-      throw e.cause
+    def isNetworkError = isNetworkError(e)
+    if (!isNetworkError || isNetworkError && failBuildOnNetworkError) {
+      throw e
     }
     else {
       listener.logger.println Messages.IqPolicyEvaluation_UnableToCommunicate(e.message)
       run.result = Result.UNSTABLE
       return null
-    }
-  }
-
-  @SuppressWarnings('CatchException')
-  // all exceptions are rethrown and possibly modified
-  private static <T> T rethrowNetworkErrors(final Closure<T> closure) {
-    try {
-      closure()
-    }
-    catch (Exception e) {
-      if (isNetworkError(e)) {
-        throw new IqNetworkException(e.getMessage(), e)
-      }
-      else {
-        throw e
-      }
     }
   }
 
