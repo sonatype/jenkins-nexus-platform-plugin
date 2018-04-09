@@ -200,6 +200,7 @@ class IqPolicyEvaluatorIntegrationTest
       def build = project.scheduleBuild2(0).get()
 
     then: 'an exception is thrown when getting proprietary config from IQ server'
+      1 * iqClient.verifyOrCreateApplication(*_) >> true
       1 * iqClient.getProprietaryConfigForApplicationEvaluation('app') >> {
         throw new IqClientException("ERROR", new IOException("BANG!"))
       }
@@ -233,13 +234,14 @@ class IqPolicyEvaluatorIntegrationTest
   def 'Freestyle build should set status to fail when build fails with network error with failBuildOnNetworkError true'() {
     given: 'a jenkins project'
       FreeStyleProject project = jenkins.createFreeStyleProject()
-      project.buildersList.add(new IqPolicyEvaluatorBuildStep('stage', 'app', [], [], true, 'cred-id'))
+      project.buildersList.add(new IqPolicyEvaluatorBuildStep('stage', new SelectedApplication('app'), [], [], true, 'cred-id'))
       configureJenkins()
 
     when: 'the build is scheduled'
       def build = project.scheduleBuild2(0).get()
 
     then: 'an exception is thrown when getting proprietary config from IQ server'
+      1 * iqClient.verifyOrCreateApplication(*_) >> true
       1 * iqClient.getProprietaryConfigForApplicationEvaluation('app') >> {
         throw new IqClientException("ERROR", new IOException("BANG!"))
       }
