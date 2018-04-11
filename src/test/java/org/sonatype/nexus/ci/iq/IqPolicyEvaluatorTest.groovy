@@ -214,7 +214,7 @@ class IqPolicyEvaluatorTest
       1 * iqClient.verifyOrCreateApplication(*_) >> true
       noExceptionThrown()
       1 * run.setResult(Result.UNSTABLE)
-      1 * logger.println('IQ Server call failed for the following reason: BOOM!! cause: CRASH')
+      1 * logger.println('IQ Server request failed for the following reason: BOOM!! cause: CRASH')
 
     where:
       exception                     | failBuildOnNetworkError || expectedException | expectedMessage
