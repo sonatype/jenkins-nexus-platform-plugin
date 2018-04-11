@@ -64,7 +64,6 @@ abstract class NxrmConfiguration
    * be {@link NxrmConfiguration} in order to build the view's
    * {@link lib.FormTagLib#repeatableHeteroProperty(java.util.Map, groovy.lang.Closure)}
    */
-  @SuppressWarnings('AbstractClassWithoutAbstractMethod')
   static abstract class NxrmDescriptor
       extends Descriptor<NxrmConfiguration>
   {
@@ -72,6 +71,9 @@ abstract class NxrmConfiguration
     NxrmDescriptor(Class<? extends NxrmConfiguration> clazz) {
       super(clazz)
     }
+
+    abstract FormValidation doVerifyCredentials(@QueryParameter String serverUrl, @QueryParameter String credentialsId)
+        throws IOException
 
     FormValidation doCheckDisplayName(@QueryParameter String value, @QueryParameter String internalId) {
       def globalConfigurations = GlobalNexusConfiguration.globalNexusConfiguration

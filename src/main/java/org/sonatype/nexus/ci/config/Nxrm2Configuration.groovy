@@ -57,15 +57,16 @@ class Nxrm2Configuration
       return 'Nexus Repository Manager 2.x Server'
     }
 
-    FormValidation doVerifyCredentials(
-        @QueryParameter String serverUrl,
-        @QueryParameter String credentialsId) throws IOException
+    @Override
+    FormValidation doVerifyCredentials(@QueryParameter String serverUrl, @QueryParameter String credentialsId)
+        throws IOException
     {
       try {
         def repositories = getApplicableRepositories(serverUrl, credentialsId)
 
-        return ok("Nexus Repository Manager 2.x connection succeeded (${repositories.size()} hosted " +
-            'release Maven 2 repositories)')
+        return ok(
+            "Nexus Repository Manager 2.x connection succeeded (${repositories.size()} hosted release Maven 2 " +
+                "repositories)")
       }
       catch (RepositoryManagerException e) {
         return error(e, 'Nexus Repository Manager 2.x connection failed')

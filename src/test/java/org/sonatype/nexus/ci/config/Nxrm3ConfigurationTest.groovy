@@ -16,30 +16,20 @@ import com.sonatype.nexus.api.exception.RepositoryManagerException
 import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client
 
 import org.sonatype.nexus.ci.config.Nxrm3Configuration.DescriptorImpl
+import org.sonatype.nexus.ci.config.NxrmConfiguration.NxrmDescriptor
 import org.sonatype.nexus.ci.util.Nxrm3Util
 import org.sonatype.nexus.ci.util.RepositoryManagerClientUtil
 
 import hudson.util.FormValidation
 import hudson.util.FormValidation.Kind
-import org.junit.ClassRule
-import org.jvnet.hudson.test.JenkinsRule
-import spock.lang.Shared
-import spock.lang.Specification
 
 class Nxrm3ConfigurationTest
-    extends Specification
+    extends NxrmConfigurationDescriptorTest
 {
-  @ClassRule
-  @Shared
-  public JenkinsRule jenkins = new JenkinsRule()
-
   RepositoryManagerV3Client client
-
-  DescriptorImpl configuration
 
   def setup() {
     client = Mock(RepositoryManagerV3Client.class)
-    configuration = (DescriptorImpl) jenkins.getInstance().getDescriptor(Nxrm3Configuration.class)
     GroovyMock(RepositoryManagerClientUtil.class, global: true)
     RepositoryManagerClientUtil.nexus3Client(_, _, _) >> client
   }
@@ -49,7 +39,7 @@ class Nxrm3ConfigurationTest
       client.getRepositories() >> repositories
 
     and:
-      FormValidation validation = configuration.doVerifyCredentials(serverUrl, credentialsId, anonymousAccess)
+      FormValidation validation = descriptor.doVerifyCredentials(serverUrl, credentialsId, anonymousAccess)
 
     then:
       validation.kind == Kind.OK
@@ -94,7 +84,7 @@ class Nxrm3ConfigurationTest
       client.getRepositories() >> { throw new RepositoryManagerException("something went wrong") }
 
     and:
-      FormValidation validation = configuration.doVerifyCredentials(serverUrl, credentialsId, anonymousAccess)
+      FormValidation validation = descriptor.doVerifyCredentials(serverUrl, credentialsId, anonymousAccess)
 
     then:
       validation.kind == Kind.ERROR
@@ -106,12 +96,12 @@ class Nxrm3ConfigurationTest
       anonymousAccess << [true]
   }
 
-  def 'automatically assumes anonymous access with no credentials'() {
+  def 'defaults to anonymous access with no credentials'() {
     when:
       GroovySpy(Nxrm3Util.class, global: true)
       client.getRepositories() >> []
     and:
-      configuration.doVerifyCredentials(serverUrl, credentialsId, anonymousAccess)
+      descriptor.doVerifyCredentials(serverUrl, credentialsId, anonymousAccess)
 
     then:
       1 * Nxrm3Util.getApplicableRepositories(serverUrl, null, true)
@@ -119,6 +109,16 @@ class Nxrm3ConfigurationTest
     where:
       serverUrl << ['serverUrl']
       credentialsId << [null]
-      anonymousAccess << [false]
+      anonymousAccess << [true]
+  }
+
+  @Override
+  NxrmConfiguration createConfig(final String id, final String displayName) {
+    new Nxrm3Configuration(id, 'internalId', displayName, 'http://foo.com', 'credId', true)
+  }
+
+  @Override
+  NxrmDescriptor getDescriptor() {
+    (DescriptorImpl) jenkins.getInstance().getDescriptor(Nxrm3Configuration.class)
   }
 }

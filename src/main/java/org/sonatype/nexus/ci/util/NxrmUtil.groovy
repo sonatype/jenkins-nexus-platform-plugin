@@ -12,8 +12,6 @@
  */
 package org.sonatype.nexus.ci.util
 
-import com.sonatype.nexus.api.repository.v2.RepositoryInfo
-
 import org.sonatype.nexus.ci.config.NxrmConfiguration
 
 import hudson.util.FormValidation
@@ -52,7 +50,7 @@ class NxrmUtil
       return FormUtil.newListBoxModelWithEmptyOption()
     }
 
-    def configuration = globalNexusConfiguration.nxrmConfigs.find { it.id == nexusInstanceId }
+    def configuration = getNexusConfiguration(nexusInstanceId)
 
     switch (configuration.version) {
       case NEXUS_2:
@@ -63,21 +61,5 @@ class NxrmUtil
             Nxrm3Util.getApplicableRepositories(configuration.serverUrl, configuration.credentialsId,
                 configuration.anonymousAccess))
     }
-  }
-
-  /**
-   * Return Nexus repositories which are applicable for package upload. These are maven2 hosted repositories.
-   * @deprecated {@link Nxrm2Util#getApplicableRepositories}
-   */
-  static List<RepositoryInfo> getApplicableRepositories(final String nexusInstanceId) {
-    Nxrm2Util.getApplicableRepositories(nexusInstanceId)
-  }
-
-  /**
-   * Return Nexus repositories which are applicable for package upload. These are maven2 hosted repositories.
-   * @deprecated {@link Nxrm2Util#getApplicableRepositories}
-   */
-  static List<RepositoryInfo> getApplicableRepositories(final String serverUrl, final String credentialsId) {
-    Nxrm2Util.getApplicableRepositories(serverUrl, credentialsId)
   }
 }

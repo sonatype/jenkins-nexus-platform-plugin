@@ -45,7 +45,6 @@ class NexusPublisherBuildStepTest
       project.getBuildersList().add(nexusPublisher)
 
       GroovyMock(RepositoryManagerClientUtil.class, global: true)
-      RepositoryManagerClientUtil.newRepositoryManagerClient(nxrm2Configuration.serverUrl, nxrm2Configuration.credentialsId) >> nxrmClient
       RepositoryManagerClientUtil.nexus2Client(nxrm2Configuration.serverUrl, nxrm2Configuration.credentialsId) >> nxrmClient
 
     when:
@@ -75,7 +74,6 @@ class NexusPublisherBuildStepTest
       project.getBuildersList().add(nexusPublisher)
 
       GroovyMock(RepositoryManagerClientUtil.class, global: true)
-      RepositoryManagerClientUtil.newRepositoryManagerClient(nxrm2Configuration.serverUrl, nxrm2Configuration.credentialsId) >> nxrmClient
       RepositoryManagerClientUtil.nexus2Client(nxrm2Configuration.serverUrl, nxrm2Configuration.credentialsId) >> nxrmClient
 
       nxrmClient.uploadComponent(_, _, _) >> { throw new RepositoryManagerException("something went wrong") }
@@ -107,7 +105,6 @@ class NexusPublisherBuildStepTest
       project.getBuildersList().add(nexusPublisher)
 
       GroovyMock(RepositoryManagerClientUtil.class, global: true)
-      RepositoryManagerClientUtil.newRepositoryManagerClient(nxrm2Configuration.serverUrl, nxrm2Configuration.credentialsId) >> nxrmClient
       RepositoryManagerClientUtil.nexus2Client(nxrm2Configuration.serverUrl, nxrm2Configuration.credentialsId) >> nxrmClient
 
     when:

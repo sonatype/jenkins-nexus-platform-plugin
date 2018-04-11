@@ -29,16 +29,6 @@ import jenkins.model.Jenkins
 @SuppressWarnings(value = ['AbcMetric'])
 class RepositoryManagerClientUtil
 {
-  /**
-   * @deprecated use version specific call {@link RepositoryManagerClientUtil#nexus2Client}
-   */
-  @Deprecated
-  static RepositoryManagerV2Client newRepositoryManagerClient(String url, String credentialsId)
-      throws URISyntaxException
-  {
-    nexus2Client(url, credentialsId)
-  }
-
   static RepositoryManagerV2Client nexus2Client(String url, String credentialsId)
       throws URISyntaxException
   {

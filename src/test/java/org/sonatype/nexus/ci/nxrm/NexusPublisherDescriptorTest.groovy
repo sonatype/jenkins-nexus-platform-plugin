@@ -88,7 +88,6 @@ abstract class NexusPublisherDescriptorTest
           ]
       ]
       client.getRepositoryList() >> repositories
-      RepositoryManagerClientUtil.newRepositoryManagerClient(nxrm2Configuration.serverUrl, nxrm2Configuration.credentialsId) >> client
       RepositoryManagerClientUtil.nexus2Client(nxrm2Configuration.serverUrl, nxrm2Configuration.credentialsId) >> client
 
     when: 'nexus repository items are filled'

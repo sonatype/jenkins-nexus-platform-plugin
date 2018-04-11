@@ -27,7 +27,7 @@ class Nxrm3Util
     def configuration = globalNexusConfiguration.nxrmConfigs.find { it.id == nexusInstanceId }
 
     if (configuration.version != NEXUS_3) {
-      throw new IllegalArgumentException('Specified nexus instance is not a 3.x server')
+      throw new IllegalArgumentException('Specified Nexus Repository Manager instance is not a 3.x server')
     }
 
     getApplicableRepositories(configuration.serverUrl, configuration.credentialsId, configuration.anonymousAccess)

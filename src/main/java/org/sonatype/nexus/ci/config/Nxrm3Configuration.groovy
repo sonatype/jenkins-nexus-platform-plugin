@@ -61,6 +61,13 @@ class Nxrm3Configuration
       return 'Nexus Repository Manager 3.x Server'
     }
 
+    @Override
+    FormValidation doVerifyCredentials(@QueryParameter String serverUrl, @QueryParameter String credentialsId)
+        throws IOException
+    {
+      doVerifyCredentials(serverUrl, credentialsId, true)
+    }
+
     FormValidation doVerifyCredentials(
         @QueryParameter String serverUrl,
         @QueryParameter String credentialsId,
@@ -68,12 +75,10 @@ class Nxrm3Configuration
     {
       try {
         def repositories = getApplicableRepositories(serverUrl, credentialsId, credentialsId ? anonymousAccess : true)
-
-        return ok("Nexus Repository Manager 3.x connection succeeded (${repositories.size()} hosted " +
-            'Maven 2 repositories)')
+        ok("Nexus Repository Manager 3.x connection succeeded (${repositories.size()} hosted Maven 2 repositories)")
       }
       catch (RepositoryManagerException e) {
-        return error(e, 'Nexus Repository Manager 3.x connection failed')
+        error(e, 'Nexus Repository Manager 3.x connection failed')
       }
     }
   }
