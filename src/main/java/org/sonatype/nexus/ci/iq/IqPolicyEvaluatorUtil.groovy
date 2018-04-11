@@ -92,12 +92,7 @@ class IqPolicyEvaluatorUtil
       throw e
     }
     else {
-      if (e.cause != null) {
-        listener.logger.println Messages.IqPolicyEvaluation_FailedWithCause(e.message, e.cause.message)
-      }
-      else {
-        listener.logger.println Messages.IqPolicyEvaluation_Failed(e.message)
-      }
+      listener.logger.println Messages.IqPolicyEvaluation_Failed(e.message, e.cause?.message)
       run.result = Result.UNSTABLE
       return null
     }
