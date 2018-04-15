@@ -31,6 +31,7 @@ import hudson.model.Result
 import hudson.model.Run
 import hudson.model.TaskListener
 import hudson.remoting.Channel
+import org.apache.commons.lang.exception.ExceptionUtils
 import org.slf4j.Logger
 import spock.lang.Specification
 import spock.util.mop.ConfineMetaClassChanges
@@ -214,7 +215,7 @@ class IqPolicyEvaluatorTest
       1 * iqClient.verifyOrCreateApplication(*_) >> true
       noExceptionThrown()
       1 * run.setResult(Result.UNSTABLE)
-      1 * logger.println('IQ Server request failed for the following reason: BOOM!! cause: CRASH')
+      listener.logger.println(ExceptionUtils.getStackTrace(new IqClientException('BOOM!!', new IOException("CRASH"))))
 
     where:
       exception                     | failBuildOnNetworkError || expectedException | expectedMessage

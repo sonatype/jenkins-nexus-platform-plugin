@@ -92,7 +92,7 @@ class IqPolicyEvaluatorUtil
       throw e
     }
     else {
-      e.printStackTrace(listener.error(e.getMessage()));
+      listener.logger.println ExceptionUtils.getStackTrace(e)
       run.result = Result.UNSTABLE
       return null
     }
