@@ -200,6 +200,7 @@ class IqPolicyEvaluatorTest
 
   def 'exception handling (part 2)'() {
     setup:
+      def expectedMsg = ExceptionUtils.getStackTrace(new IqClientException('BOOM!!', new IOException("CRASH")))
       iqClient.getProprietaryConfigForApplicationEvaluation('appId') >> { throw exception }
       def buildStep = new IqPolicyEvaluatorBuildStep('stage', new SelectedApplication('appId'), [new ScanPattern('*.jar')], [],
           failBuildOnNetworkError, '131-cred')
@@ -215,7 +216,7 @@ class IqPolicyEvaluatorTest
       1 * iqClient.verifyOrCreateApplication(*_) >> true
       noExceptionThrown()
       1 * run.setResult(Result.UNSTABLE)
-      listener.logger.println(ExceptionUtils.getStackTrace(new IqClientException('BOOM!!', new IOException("CRASH"))))
+      1 * logger.println({String c -> c.startsWith('com.sonatype.nexus.api.exception.IqClientException: BOOM!!')})
 
     where:
       exception                     | failBuildOnNetworkError || expectedException | expectedMessage
