@@ -91,8 +91,7 @@ class ComponentUploaderNxrm3
       nexus3Client(nxrm3Configuration.serverUrl, nxrm3Configuration.credentialsId, nxrm3Configuration.anonymousAccess)
     }
     catch (Exception e) {
-      def message = 'Error creating RepositoryManagerClient'
-      logger.println(message)
+      logger.println('Error creating RepositoryManagerClient')
       logger.println('Failing build due to error creating RepositoryManagerClient')
       run.setResult(Result.FAILURE)
       throw e
