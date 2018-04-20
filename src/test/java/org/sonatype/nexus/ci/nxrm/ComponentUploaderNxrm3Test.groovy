@@ -14,6 +14,7 @@ package org.sonatype.nexus.ci.nxrm
 
 import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client
 
+import org.sonatype.nexus.ci.config.Nxrm2Configuration
 import org.sonatype.nexus.ci.config.Nxrm3Configuration
 import org.sonatype.nexus.ci.nxrm.ComponentUploader.RemoteMavenAsset
 import org.sonatype.nexus.ci.nxrm.v3.ComponentUploaderNxrm3
@@ -179,5 +180,23 @@ class ComponentUploaderNxrm3Test
     then:
       1 * remotePath.getRemote() >> 'foo'
       1 * remotePath.read() >> payload
+  }
+
+  @WithoutJenkins
+  def 'it requires a nxrm3 server'() {
+    setup:
+      def config = new Nxrm2Configuration('id', 'interalId', 'displayName', 'http://localhost', 'credsId')
+      def logger = Mock(PrintStream)
+      def publisher = Mock(NexusPublisher)
+      def workspace = GroovyMock(FilePath)
+      taskListener.getLogger() >> logger
+      run.getEnvironment() >> new EnvVars([:])
+    when:
+      new ComponentUploaderNxrm3(config, run, taskListener).uploadComponents(publisher, workspace)
+    then:
+      def thrown = thrown(IllegalArgumentException)
+      thrown.message == 'Nexus Repository Manager 3.x server is required'
+      1 * logger.println('Failing build due to error creating RepositoryManagerClient')
+      1 * run.setResult(Result.FAILURE)
   }
 }

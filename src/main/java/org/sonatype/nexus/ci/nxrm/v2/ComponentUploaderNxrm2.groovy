@@ -18,13 +18,16 @@ import com.sonatype.nexus.api.repository.v2.MavenAsset
 import com.sonatype.nexus.api.repository.v2.RepositoryManagerV2Client
 
 import org.sonatype.nexus.ci.config.Nxrm2Configuration
+import org.sonatype.nexus.ci.config.NxrmConfiguration
 import org.sonatype.nexus.ci.nxrm.ComponentUploader
 import org.sonatype.nexus.ci.nxrm.MavenCoordinate
 
 import groovy.transform.InheritConstructors
+import groovy.transform.PackageScope
 import hudson.FilePath
 import hudson.model.Result
 
+import static com.sonatype.nexus.api.common.ArgumentUtils.checkArgument
 import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus2Client
 
 @SuppressWarnings(['CatchException', 'AbcMetric', 'MethodSize'])
@@ -34,7 +37,7 @@ class ComponentUploaderNxrm2
 {
   @Override
   void upload(final Map<MavenCoordinate, List<RemoteMavenAsset>> remoteMavenComponents,
-                        String nxrmRepositoryId)
+              final String nxrmRepositoryId)
   {
     def nxrmClient = getRepositoryManagerClient(nxrmConfiguration)
 
@@ -78,13 +81,14 @@ class ComponentUploaderNxrm2
     }
   }
 
-  RepositoryManagerV2Client getRepositoryManagerClient(final Nxrm2Configuration nexusConfiguration) {
+  @PackageScope
+  RepositoryManagerV2Client getRepositoryManagerClient(final NxrmConfiguration nexusConfiguration) {
     try {
+      checkArgument(nxrmConfiguration.class == Nxrm2Configuration.class,
+          'Nexus Repository Manager 2.x server is required')
       return nexus2Client(nexusConfiguration.serverUrl, nexusConfiguration.credentialsId)
     }
     catch (Exception e) {
-      def message = 'Error creating RepositoryManagerClient'
-      logger.println(message)
       logger.println('Failing build due to error creating RepositoryManagerClient')
       run.setResult(Result.FAILURE)
       throw e

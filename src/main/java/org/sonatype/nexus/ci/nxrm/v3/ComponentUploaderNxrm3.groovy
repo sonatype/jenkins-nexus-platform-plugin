@@ -18,12 +18,15 @@ import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client
 import com.sonatype.nexus.api.repository.v3.formats.maven.MavenComponentBuilder
 
 import org.sonatype.nexus.ci.config.Nxrm3Configuration
+import org.sonatype.nexus.ci.config.NxrmConfiguration
 import org.sonatype.nexus.ci.nxrm.ComponentUploader
 import org.sonatype.nexus.ci.nxrm.MavenCoordinate
 
 import groovy.transform.InheritConstructors
+import groovy.transform.PackageScope
 import hudson.model.Result
 
+import static com.sonatype.nexus.api.common.ArgumentUtils.checkArgument
 import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client
 
 @SuppressWarnings(['CatchException', 'AbcMetric', 'MethodSize'])
@@ -33,7 +36,7 @@ class ComponentUploaderNxrm3
 {
   @Override
   void upload(final Map<MavenCoordinate, List<RemoteMavenAsset>> remoteMavenComponents,
-                        String nxrmRepositoryId)
+              final String nxrmRepositoryId)
   {
     def nxrmClient = getRepositoryManagerClient(nxrmConfiguration)
 
@@ -79,8 +82,12 @@ class ComponentUploaderNxrm3
     logger.println('Successfully Uploaded Maven Assets')
   }
 
-  RepositoryManagerV3Client getRepositoryManagerClient(final Nxrm3Configuration nxrm3Configuration) {
+  @PackageScope
+  RepositoryManagerV3Client getRepositoryManagerClient(final NxrmConfiguration nxrmConfiguration) {
     try {
+      checkArgument(nxrmConfiguration.class == Nxrm3Configuration.class,
+          'Nexus Repository Manager 3.x server is required')
+      Nxrm3Configuration nxrm3Configuration = nxrmConfiguration as Nxrm3Configuration
       nexus3Client(nxrm3Configuration.serverUrl, nxrm3Configuration.credentialsId, nxrm3Configuration.anonymousAccess)
     }
     catch (Exception e) {

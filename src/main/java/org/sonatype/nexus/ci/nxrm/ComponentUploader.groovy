@@ -41,8 +41,8 @@ abstract class ComponentUploader
     this.envVars = run.getEnvironment(taskListener)
   }
 
-  protected abstract void upload(Map<MavenCoordinate, List<RemoteMavenAsset>> remoteMavenComponents,
-                                           String nxrmRepositoryId)
+  protected abstract void upload(final Map<MavenCoordinate, List<RemoteMavenAsset>> remoteMavenComponents,
+                                 final String nxrmRepositoryId)
 
   void uploadComponents(final NexusPublisher nexusPublisher,
                         final FilePath filePath)

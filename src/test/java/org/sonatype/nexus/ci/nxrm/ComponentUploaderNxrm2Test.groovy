@@ -15,6 +15,7 @@ package org.sonatype.nexus.ci.nxrm
 import com.sonatype.nexus.api.repository.v2.RepositoryManagerV2Client
 
 import org.sonatype.nexus.ci.config.Nxrm2Configuration
+import org.sonatype.nexus.ci.config.Nxrm3Configuration
 import org.sonatype.nexus.ci.nxrm.ComponentUploader.RemoteMavenAsset
 import org.sonatype.nexus.ci.nxrm.v2.ComponentUploaderNxrm2
 import org.sonatype.nexus.ci.util.RepositoryManagerClientUtil
@@ -185,5 +186,23 @@ class ComponentUploaderNxrm2Test
       1 * remotePath.copyTo(_ as FilePath) >> { args -> localFilePath = args[0] }
       def localTmpFileName = localFilePath.getName()
       localTmpFileName.startsWith('foo') && localTmpFileName.endsWith('.tmp')
+  }
+
+  @WithoutJenkins
+  def 'it requires a nxrm2 server'() {
+    setup:
+      def config = new Nxrm3Configuration('id', 'interalId', 'displayName', 'http://localhost', 'credsId', true)
+      def logger = Mock(PrintStream)
+      def publisher = Mock(NexusPublisher)
+      def workspace = GroovyMock(FilePath)
+      taskListener.getLogger() >> logger
+      run.getEnvironment() >> new EnvVars([:])
+    when:
+      new ComponentUploaderNxrm2(config, run, taskListener).uploadComponents(publisher, workspace)
+    then:
+      def thrown = thrown(IllegalArgumentException)
+      thrown.message == 'Nexus Repository Manager 2.x server is required'
+      1 * logger.println('Failing build due to error creating RepositoryManagerClient')
+      1 * run.setResult(Result.FAILURE)
   }
 }
