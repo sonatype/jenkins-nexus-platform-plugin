@@ -46,7 +46,6 @@ class ComponentUploaderNxrm3
             "artifactId: ${mavenCoordinate.artifactId} version: ${mavenCoordinate.version} " +
             "To repository: ${nxrmRepositoryId}")
 
-
         def mavenComponentBuilder = MavenComponentBuilder.create()
             .withGroupId(envVars.expand(mavenCoordinate.groupId))
             .withArtifactId(envVars.expand(mavenCoordinate.artifactId))
