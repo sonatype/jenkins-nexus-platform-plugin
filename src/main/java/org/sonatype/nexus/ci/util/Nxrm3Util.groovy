@@ -14,6 +14,8 @@ package org.sonatype.nexus.ci.util
 
 import com.sonatype.nexus.api.repository.v3.Repository
 
+import hudson.util.FormValidation
+
 import static org.sonatype.nexus.ci.config.GlobalNexusConfiguration.getGlobalNexusConfiguration
 import static org.sonatype.nexus.ci.config.NxrmVersion.NEXUS_3
 import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client
@@ -39,5 +41,9 @@ class Nxrm3Util
   static List<Repository> getApplicableRepositories(final String serverUrl, final String credentialsId) {
     nexus3Client(serverUrl, credentialsId).getRepositories().
         findAll { 'hosted'.equalsIgnoreCase(it.type) && 'maven2'.equalsIgnoreCase(it.format) }
+  }
+
+  static FormValidation doCheckTag(final String value) {
+    return FormUtil.validateNotEmpty(value, 'Component tag required')
   }
 }
