@@ -12,6 +12,7 @@
  */
 package org.sonatype.nexus.ci.nxrm.v3.pipeline
 
+import org.sonatype.nexus.ci.nxrm.NexusStaging
 import org.sonatype.nexus.ci.util.NxrmUtil
 
 import hudson.Extension
@@ -24,6 +25,7 @@ import org.kohsuke.stapler.QueryParameter
 
 class NexusStagingMoveWorkflowStep
     extends AbstractStepImpl
+    implements NexusStaging
 
 {
   final String nexusInstanceId

@@ -27,7 +27,7 @@ class NexusStagingMoveExecution
 {
 
   @Inject
-  NexusStagingMoveWorkflowStep stagingMoveWorkflow
+  private transient NexusStagingMoveWorkflowStep stagingMoveWorkflow
 
   @StepContextParameter
   private transient TaskListener listener
@@ -38,6 +38,6 @@ class NexusStagingMoveExecution
   @Override
   @SuppressWarnings('ConfusingMethodName')
   protected Void run() throws Exception {
-    getComponentStaging(stagingMoveWorkflow.nexusInstanceId, run, listener).moveComponents(this)
+    getComponentStaging(stagingMoveWorkflow.nexusInstanceId, run, listener).moveComponents(stagingMoveWorkflow)
   }
 }

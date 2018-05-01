@@ -14,7 +14,7 @@ package org.sonatype.nexus.ci.nxrm.v3.freestyle
 
 import javax.annotation.Nonnull
 
-import org.sonatype.nexus.ci.nxrm.ComponentStaging
+import org.sonatype.nexus.ci.nxrm.NexusStaging
 import org.sonatype.nexus.ci.util.NxrmUtil
 
 import hudson.Extension
@@ -26,20 +26,17 @@ import hudson.model.TaskListener
 import hudson.tasks.BuildStepDescriptor
 import hudson.tasks.Builder
 import hudson.util.FormValidation
-import hudson.util.FormValidation.Kind
 import hudson.util.ListBoxModel
 import jenkins.tasks.SimpleBuildStep
 import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.QueryParameter
 
-import static hudson.model.Result.FAILURE
-import static org.sonatype.nexus.ci.config.GlobalNexusConfiguration.getGlobalNexusConfiguration
+
 import static org.sonatype.nexus.ci.nxrm.ComponentStaging.getComponentStaging
-import static org.sonatype.nexus.ci.util.FormUtil.validateUrl
 
 class NexusStagingMoveBuildStep
     extends Builder
-    implements SimpleBuildStep
+    implements NexusStaging, SimpleBuildStep
 {
   final String nexusInstanceId
 

@@ -17,9 +17,6 @@ import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client
 
 import org.sonatype.nexus.ci.config.Nxrm3Configuration
 import org.sonatype.nexus.ci.config.NxrmConfiguration
-import org.sonatype.nexus.ci.nxrm.v3.freestyle.NexusStagingMoveBuildStep
-import org.sonatype.nexus.ci.nxrm.v3.pipeline.NexusStagingMoveExecution
-import org.sonatype.nexus.ci.nxrm.v3.pipeline.NexusStagingMoveWorkflowStep
 
 import groovy.transform.PackageScope
 import hudson.EnvVars
@@ -52,52 +49,26 @@ class ComponentStaging
     this.envVars = run.getEnvironment(taskListener)
   }
 
-  void moveComponents(final NexusStagingMoveBuildStep stagingMoveBuildStep) {
-    logger.println("Moving components associated with tag: ${stagingMoveBuildStep.tagName} " +
-        "in Nexus Instance: ${stagingMoveBuildStep.nexusInstanceId} " +
-        "to repository: ${stagingMoveBuildStep.destinationRepository}")
+  void moveComponents(final NexusStaging staging) {
+    logger.println("Moving components associated with tag: ${staging.tagName} " +
+        "in Nexus Instance: ${staging.nexusInstanceId} " +
+        "to repository: ${staging.destinationRepository}")
 
     try {
       getRepositoryManagerClient(nxrmConfiguration)
-          .move(stagingMoveBuildStep.destinationRepository, stagingMoveBuildStep.tagName)
+          .move(staging.destinationRepository, staging.tagName)
     }
     catch (RepositoryManagerException ex) {
-      final String moveFailed = 'Move of components associated with tag: ' + "${stagingMoveBuildStep.tagName}" +
-          'in repository ' + "${stagingMoveBuildStep.nexusInstanceId}" + 'to repository: ' +
-          "${stagingMoveBuildStep.destinationRepository}" + ' failed'
+      final String moveFailed = 'Move of components associated with tag: ' + "${staging.tagName}" +
+          'in repository ' + "${staging.nexusInstanceId}" + 'to repository: ' +
+          "${staging.destinationRepository}" + ' failed'
 
       logger.println(moveFailed)
       logger.println('Failing build due to failure to move components to ' +
-          "${stagingMoveBuildStep.destinationRepository}")
-      run.setResult(Result.FAILURE)
-      throw new IOException(moveFailed, ex)
-    }
-  }
-
-  void moveComponents(final NexusStagingMoveExecution stagingMoveExecution) {
-    final NexusStagingMoveWorkflowStep stagingMoveWorkflowStep = stagingMoveExecution.stagingMoveWorkflow;
-    logger.println("Moving components associated with tag: ${stagingMoveWorkflowStep.tagName} " +
-        "in Nexus Instance: ${stagingMoveWorkflowStep.nexusInstanceId} " +
-        "to repository: ${stagingMoveWorkflowStep.destinationRepository}")
-
-
-    try {
-      //build the url
-      getRepositoryManagerClient(nxrmConfiguration)
-          .move(stagingMoveWorkflowStep.destinationRepository, stagingMoveWorkflowStep.tagName)
-    }
-    catch (RepositoryManagerException ex) {
-      final String moveFailed = 'Move of components associated with tag: ' + "${stagingMoveWorkflowStep.tagName}" +
-          'in repository ' + "${stagingMoveWorkflowStep.nexusInstanceId}" + 'to repository: ' +
-          "${stagingMoveWorkflowStep.destinationRepository}" + ' failed'
-
-      logger.println(moveFailed)
-      logger.println('Failing build due to failure to move components to ' +
-          "${stagingMoveWorkflowStep.destinationRepository}")
+          "${staging.destinationRepository}")
       run.setResult(FAILURE)
       throw new IOException(moveFailed, ex)
     }
-
   }
 
   static ComponentStaging getComponentStaging(final String nexusInstanceId, final Run run, final TaskListener listener) {
@@ -115,11 +86,11 @@ class ComponentStaging
     return new ComponentStaging(nxrmConfig, run, listener)
   }
 
-  private static void failRun(final Run run, final PrintStream logger, final String failMsg) {
-    logger.println("Failing build due to: ${failMsg}")
-    run.setResult(FAILURE)
-    throw new IllegalArgumentException(failMsg)
-  }
+  static void failRun(final Run run, final PrintStream logger, final String failMsg) {
+  logger.println("Failing build due to: ${failMsg}")
+  run.setResult(FAILURE)
+  throw new IllegalArgumentException(failMsg)
+}
 
   @PackageScope
   RepositoryManagerV3Client getRepositoryManagerClient(final NxrmConfiguration nxrmConfiguration) {
@@ -127,7 +98,7 @@ class ComponentStaging
       checkArgument(nxrmConfiguration.class == Nxrm3Configuration.class,
           'Nexus Repository Manager 3.x server is required')
       Nxrm3Configuration nxrm3Configuration = nxrmConfiguration as Nxrm3Configuration
-      nexus3Client(nxrm3Configuration.serverUrl, nxrm3Configuration.credentialsId, nxrm3Configuration.anonymousAccess)
+      nexus3Client(nxrm3Configuration.serverUrl, nxrm3Configuration.credentialsId)
     }
     catch (Exception e) {
       logger.println('Error creating RepositoryManagerClient')
