@@ -42,7 +42,13 @@ f.section(title: descriptor.displayName) {
     f.textbox(clazz: 'required')
   }
 
-  f.entry(title: _('Tag Attributes (JSON)'), field: 'tagAttributesJson') {
+  f.entry(title: _('Tag Attributes File'), field: 'tagAttributesPath') {
     f.textbox()
+  }
+
+  f.advanced() {
+    f.entry(title: _('Tag Attributes (JSON)'), field: 'tagAttributesJson') {
+      f.textarea()
+    }
   }
 }
