@@ -10,36 +10,21 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.sonatype.nexus.ci.nxrm.v3.freestyle
+package org.sonatype.nexus.ci.nxrm.v3.pipeline
 
-import javax.annotation.Nonnull
-
-import org.sonatype.nexus.ci.nxrm.ComponentStaging
 import org.sonatype.nexus.ci.util.NxrmUtil
 
 import hudson.Extension
-import hudson.FilePath
-import hudson.Launcher
-import hudson.model.AbstractProject
-import hudson.model.Run
-import hudson.model.TaskListener
-import hudson.tasks.BuildStepDescriptor
-import hudson.tasks.Builder
 import hudson.util.FormValidation
-import hudson.util.FormValidation.Kind
 import hudson.util.ListBoxModel
-import jenkins.tasks.SimpleBuildStep
+import org.jenkinsci.plugins.workflow.steps.AbstractStepDescriptorImpl
+import org.jenkinsci.plugins.workflow.steps.AbstractStepImpl
 import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.QueryParameter
 
-import static hudson.model.Result.FAILURE
-import static org.sonatype.nexus.ci.config.GlobalNexusConfiguration.getGlobalNexusConfiguration
-import static org.sonatype.nexus.ci.nxrm.ComponentStaging.getComponentStaging
-import static org.sonatype.nexus.ci.util.FormUtil.validateUrl
+class NexusStagingMoveWorkflowStep
+    extends AbstractStepImpl
 
-class NexusStagingMoveBuildStep
-    extends Builder
-    implements SimpleBuildStep
 {
   final String nexusInstanceId
 
@@ -48,31 +33,29 @@ class NexusStagingMoveBuildStep
   final String destinationRepository
 
   @DataBoundConstructor
-  NexusStagingMoveBuildStep(final String nexusInstanceId, final String tagName, final String destinationRepository) {
+  NexusStagingMoveWorkflowStep(final String nexusInstanceId, final String tagName, final String destinationRepository) {
     this.nexusInstanceId = nexusInstanceId
     this.tagName = tagName
     this.destinationRepository = destinationRepository
   }
 
-  @Override
-  void perform(@Nonnull final Run run, @Nonnull final FilePath workspace, @Nonnull final Launcher launcher,
-               @Nonnull final TaskListener listener) throws InterruptedException, IOException
-  {
-    getComponentStaging(nexusInstanceId, run, listener).moveComponents(this)
-  }
-
   @Extension
   static final class DescriptorImpl
-      extends BuildStepDescriptor<Builder>
+      extends AbstractStepDescriptorImpl
   {
-    @Override
-    String getDisplayName() {
-      'Nexus Staging Component Move'
+
+    DescriptorImpl() {
+      super(NexusStagingMoveExecution)
     }
 
     @Override
-    boolean isApplicable(final Class<? extends AbstractProject> jobType) {
-      true
+    String getFunctionName() {
+      return 'nexusStaging'
+    }
+
+    @Override
+    String getDisplayName() {
+      'Nexus Staging Component Move'
     }
 
     FormValidation doCheckNexusInstanceId(@QueryParameter String value) {
