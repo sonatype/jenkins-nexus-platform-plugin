@@ -34,6 +34,7 @@ import static hudson.model.Result.FAILURE
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_DisplayName
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Error_InvalidTagAttributes
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameRequired
+import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client
 
 class CreateTagBuildStep
     extends Builder
@@ -67,17 +68,19 @@ class CreateTagBuildStep
     def tagAttributes
 
     try {
-      client = RepositoryManagerClientUtil.nexus3Client(nexusInstanceId)
+      client = nexus3Client(nexusInstanceId)
     }
     catch (RepositoryManagerException e) {
-      failBuild(run, log, e.message, e)
+      failBuildAndThrow(run, log, e.message, e)
+      return
     }
 
     try {
       tagAttributes = new Gson().fromJson(tagAttributesJson, ATTRIBUTE_TYPE)
     }
     catch (Exception e) {
-      failBuild(run, log, CreateTag_Error_InvalidTagAttributes(), e)
+      failBuildAndThrow(run, log, CreateTag_Error_InvalidTagAttributes(), e)
+      return
     }
 
     try {
@@ -88,12 +91,14 @@ class CreateTagBuildStep
     }
   }
 
-  private void failBuild(Run run, PrintStream log, String reason, @Nullable Exception illegalArgCause) {
+  private void failBuildAndThrow(Run run, PrintStream log, String reason, Throwable throwable) {
+    failBuild(run, log, reason)
+    throw throwable
+  }
+
+  private void failBuild(Run run, PrintStream log, String reason) {
     log.println("Failing build due to: ${reason}")
     run.setResult(FAILURE)
-    if (illegalArgCause) {
-      throw new IllegalArgumentException(reason, illegalArgCause)
-    }
   }
 
   @Extension
