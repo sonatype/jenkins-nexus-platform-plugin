@@ -8,6 +8,7 @@ import javax.annotation.Nullable
 import com.sonatype.nexus.api.exception.RepositoryManagerException
 
 import org.sonatype.nexus.ci.config.NxrmVersion
+import org.sonatype.nexus.ci.nxrm.Messages
 import org.sonatype.nexus.ci.util.FormUtil
 import org.sonatype.nexus.ci.util.NxrmUtil
 import org.sonatype.nexus.ci.util.RepositoryManagerClientUtil
@@ -26,9 +27,13 @@ import hudson.util.FormValidation
 import hudson.util.ListBoxModel
 import jenkins.tasks.SimpleBuildStep
 import org.kohsuke.stapler.DataBoundConstructor
+import org.kohsuke.stapler.DataBoundSetter
 import org.kohsuke.stapler.QueryParameter
 
 import static hudson.model.Result.FAILURE
+import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_DisplayName
+import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Error_InvalidTagAttributes
+import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameRequired
 
 class CreateTagBuildStep
     extends Builder
@@ -36,9 +41,9 @@ class CreateTagBuildStep
 {
   private static final Type ATTRIBUTE_TYPE = new TypeToken<Map<String, Object>>() {}.getType()
 
-  String nexusInstanceId
+  final String nexusInstanceId
 
-  String tagName
+  final String tagName
 
   String tagAttributesJson
 
@@ -46,6 +51,11 @@ class CreateTagBuildStep
   CreateTagBuildStep(final String nexusInstanceId, final String tagName) {
     this.nexusInstanceId = nexusInstanceId
     this.tagName = tagName
+  }
+
+  @DataBoundSetter
+  void setTagAttributesJson(final String tagAttributesJson) {
+    this.tagAttributesJson = tagAttributesJson
   }
 
   @Override
@@ -67,7 +77,7 @@ class CreateTagBuildStep
       tagAttributes = new Gson().fromJson(tagAttributesJson, ATTRIBUTE_TYPE)
     }
     catch (Exception e) {
-      failBuild(run, log, 'invalid tag attributes', e)
+      failBuild(run, log, CreateTag_Error_InvalidTagAttributes(), e)
     }
 
     try {
@@ -92,7 +102,7 @@ class CreateTagBuildStep
   {
     @Override
     String getDisplayName() {
-      "Create Tag (Nexus Repository Manager 3.x)"
+      CreateTag_DisplayName()
     }
 
     @Override
@@ -101,7 +111,7 @@ class CreateTagBuildStep
     }
 
     FormValidation doCheckTagName(@QueryParameter String tagName) {
-      FormUtil.validateNotEmpty(tagName)
+      FormUtil.validateNotEmpty(tagName, CreateTag_Validation_TagNameRequired())
     }
 
     FormValidation doCheckNexusInstanceId(@QueryParameter String value) {
@@ -110,14 +120,6 @@ class CreateTagBuildStep
 
     ListBoxModel doFillNexusInstanceIdItems() {
       NxrmUtil.doFillNexusInstanceIdItems(NxrmVersion.NEXUS_3)
-    }
-
-    FormValidation doCheckNexusRepositoryId(@QueryParameter String value) {
-      NxrmUtil.doCheckNexusRepositoryId(value)
-    }
-
-    ListBoxModel doFillNexusRepositoryIdItems(@QueryParameter String nexusInstanceId) {
-      NxrmUtil.doFillNexusRepositoryIdItems(nexusInstanceId)
     }
   }
 }
