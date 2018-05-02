@@ -20,7 +20,7 @@ import org.sonatype.nexus.ci.config.NxrmConfiguration
 import org.sonatype.nexus.ci.util.FormUtil
 import org.sonatype.nexus.ci.util.RepositoryManagerClientUtil
 
-import org.junit.Rule;
+import org.junit.Rule
 import org.jvnet.hudson.test.JenkinsRule
 import spock.lang.Specification
 
