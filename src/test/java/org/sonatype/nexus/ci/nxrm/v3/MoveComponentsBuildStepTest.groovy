@@ -28,18 +28,14 @@ import org.junit.Rule
 import org.jvnet.hudson.test.JenkinsRule
 import spock.lang.Specification
 
-import static org.hamcrest.MatcherAssert.assertThat
+import static hudson.model.Result.SUCCESS
 
 class MoveComponentsBuildStepTest
     extends Specification
 {
 
   @Rule
-  public JenkinsRule jenkins = new JenkinsRule()
-
-  DescriptorImpl getDescriptor() {
-    return (DescriptorImpl) jenkins.getInstance().getDescriptor(MoveComponentsBuildStep.class)
-  }
+  public JenkinsRule jenkinsRule = new JenkinsRule()
 
   def 'it populates Nexus instances'() {
     setup:
@@ -121,7 +117,7 @@ class MoveComponentsBuildStepTest
       def tagName = "foo"
       def nexusStagingMove = new MoveComponentsBuildStep(nexusInstanceId, tagName, destinationRepository)
 
-      def project = jenkins.createFreeStyleProject()
+      def project = jenkinsRule.createFreeStyleProject()
       project.getBuildersList().add(nexusStagingMove)
 
       GroovyMock(RepositoryManagerClientUtil.class, global: true)
@@ -131,7 +127,7 @@ class MoveComponentsBuildStepTest
       Run build = project.scheduleBuild2(0).get()
 
     then:
-      jenkins.assertBuildStatus(Result.SUCCESS, build)
+      jenkinsRule.assertBuildStatus(SUCCESS, build)
   }
 
   def 'it fails to complete a move operation based on a tag'() {
@@ -142,7 +138,7 @@ class MoveComponentsBuildStepTest
       def tagName = "foo"
       def nexusStagingMove = new MoveComponentsBuildStep(nexusInstanceId, tagName, destinationRepository)
 
-      def project = jenkins.createFreeStyleProject()
+      def project = jenkinsRule.createFreeStyleProject()
       project.getBuildersList().add(nexusStagingMove)
 
       GroovyMock(RepositoryManagerClientUtil.class, global: true)
@@ -153,22 +149,25 @@ class MoveComponentsBuildStepTest
       Run build = project.scheduleBuild2(0).get()
 
     then:
-      jenkins.assertBuildStatus(Result.FAILURE, build)
+      jenkinsRule.assertBuildStatus(Result.FAILURE, build)
 
     and:
-      String log = jenkins.getLog(build)
-      assertThat(log, log.contains("Build step 'Nexus Repository Move Components' changed build result to FAILURE"))
+      jenkinsRule.assertLogContains("Build step 'Nexus Repository Move Components' changed build result to FAILURE", build)
   }
 
-  private Nxrm3Configuration saveGlobalConfigurationWithNxrm3Configuration() {
+  Nxrm3Configuration saveGlobalConfigurationWithNxrm3Configuration() {
     def configurationList = new ArrayList<NxrmConfiguration>()
     def nxrm3Configuration = new Nxrm3Configuration('id', 'internalId', 'displayName', 'http://foo.com', 'credentialsId')
     configurationList.push(nxrm3Configuration)
 
-    def globalConfiguration = jenkins.getInstance().getDescriptorByType(GlobalNexusConfiguration.class)
+    def globalConfiguration = jenkinsRule.getInstance().getDescriptorByType(GlobalNexusConfiguration.class)
     globalConfiguration.nxrmConfigs = configurationList
     globalConfiguration.save()
 
     return nxrm3Configuration
+  }
+
+  DescriptorImpl getDescriptor() {
+    return (DescriptorImpl) jenkinsRule.getInstance().getDescriptor(MoveComponentsBuildStep.class)
   }
 }

@@ -35,7 +35,7 @@ import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.QueryParameter
 
 import static hudson.model.Result.FAILURE
-
+import static hudson.model.Result.SUCCESS
 import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponentsBuildStep_DisplayName
 import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponentsBuildStep_Validation_TagNameRequired
 import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client
@@ -66,6 +66,7 @@ class MoveComponentsBuildStep
     try {
       def client = nexus3Client(nexusInstanceId)
       client.move(destinationRepository, tagName)
+      run.setResult(SUCCESS)
     }
     catch (RepositoryManagerException e) {
       log.println("Failing build due to: ${e.responseMessage.orElse(e.message)}")

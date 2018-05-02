@@ -18,7 +18,8 @@ import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client
 import org.sonatype.nexus.ci.config.GlobalNexusConfiguration
 import org.sonatype.nexus.ci.config.Nxrm3Configuration
 import org.sonatype.nexus.ci.config.NxrmConfiguration
-import org.sonatype.nexus.ci.nxrm.v3.pipeline.MoveComponentsStep.DescriptorImpl
+import org.sonatype.nexus.ci.nxrm.v3.MoveComponentsBuildStep
+import org.sonatype.nexus.ci.nxrm.v3.MoveComponentsBuildStep.DescriptorImpl
 import org.sonatype.nexus.ci.util.FormUtil
 import org.sonatype.nexus.ci.util.RepositoryManagerClientUtil
 
@@ -31,17 +32,12 @@ import spock.lang.Specification
 
 import static hudson.model.Result.FAILURE
 import static hudson.model.Result.SUCCESS
-import static org.hamcrest.MatcherAssert.assertThat
 
 class MoveComponentsStepTest
     extends Specification
 {
   @Rule
-  public JenkinsRule jenkins = new JenkinsRule()
-
-  DescriptorImpl getDescriptor() {
-    return (DescriptorImpl) jenkins.getInstance().getDescriptor(MoveComponentsStep.class)
-  }
+  public JenkinsRule jenkinsRule = new JenkinsRule()
 
   def 'it populates Nexus instances'() {
     setup:
@@ -131,7 +127,7 @@ class MoveComponentsStepTest
       Run build = project.scheduleBuild2(0).get()
 
     then:
-      jenkins.assertBuildStatus(SUCCESS, build)
+      jenkinsRule.assertBuildStatus(SUCCESS, build)
   }
 
   def 'it fails completes a move operation based on a tag'() {
@@ -151,26 +147,29 @@ class MoveComponentsStepTest
       Run build = project.scheduleBuild2(0).get()
 
     then:
-      jenkins.assertBuildStatus(FAILURE, build)
+      jenkinsRule.assertBuildStatus(FAILURE, build)
 
     and:
-      String log = jenkins.getLog(build)
-      assertThat(log, log.contains("Failing build due to: Move failed"))
+      jenkinsRule.assertLogContains("Failing build due to: Move failed", build)
   }
 
-  private WorkflowJob getWorkflowJob(String instanceId, String destination, String tagName) {
-    WorkflowJob job = jenkins.createProject(WorkflowJob.class, "nexusStagingMove")
+  DescriptorImpl getDescriptor() {
+    return (DescriptorImpl) jenkinsRule.getInstance().getDescriptor(MoveComponentsBuildStep.class)
+  }
+  
+  WorkflowJob getWorkflowJob(String instanceId, String destination, String tagName) {
+    WorkflowJob job = jenkinsRule.createProject(WorkflowJob.class, "nexusStagingMove")
     job.setDefinition(new CpsFlowDefinition("node {moveComponents destinationRepository: '" + destination +
         "', nexusInstanceId: '" + instanceId +"', tagName: '" + tagName + "'}"))
     return job
   }
 
-  private Nxrm3Configuration saveGlobalConfigurationWithNxrm3Configuration() {
+  Nxrm3Configuration saveGlobalConfigurationWithNxrm3Configuration() {
     def configurationList = new ArrayList<NxrmConfiguration>()
     def nxrm3Configuration = new Nxrm3Configuration('id', 'internalId', 'displayName', 'http://foo.com', 'credentialsId')
     configurationList.push(nxrm3Configuration)
 
-    def globalConfiguration = jenkins.getInstance().getDescriptorByType(GlobalNexusConfiguration.class)
+    def globalConfiguration = jenkinsRule.getInstance().getDescriptorByType(GlobalNexusConfiguration.class)
     globalConfiguration.nxrmConfigs = configurationList
     globalConfiguration.save()
 
