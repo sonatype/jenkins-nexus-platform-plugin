@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.sonatype.nexus.ci.nxrm.v3.freestyle.NexusStagingMoveBuildStep
+package org.sonatype.nexus.ci.nxrm.v3.NexusStagingMoveBuildStep
 
 import org.sonatype.nexus.ci.util.NxrmUtil
 
@@ -46,7 +46,7 @@ f.section(title: descriptor.displayName) {
     f.select()
   }
 
-  f.entry(title: _('Tag'), field: 'tagName') {
+  f.entry(title: _('Tag Name'), field: 'tagName') {
     f.textbox(clazz: 'required')
   }
 }

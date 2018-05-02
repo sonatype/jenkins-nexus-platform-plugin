@@ -46,7 +46,7 @@ f.section(title: descriptor.displayName) {
     f.select()
   }
 
-  f.entry(title: _('Tag'), field: 'tagName') {
+  f.entry(title: _('Tag Name'), field: 'tagName') {
     f.textbox(clazz: 'required')
   }
 }

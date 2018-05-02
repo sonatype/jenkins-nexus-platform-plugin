@@ -12,20 +12,32 @@
  */
 package org.sonatype.nexus.ci.nxrm.v3.pipeline
 
-import org.sonatype.nexus.ci.nxrm.NexusStaging
+import javax.annotation.Nonnull
+
+import com.sonatype.nexus.api.exception.RepositoryManagerException
+
 import org.sonatype.nexus.ci.util.NxrmUtil
 
+import com.google.common.collect.ImmutableSet
 import hudson.Extension
+import hudson.model.Run
+import hudson.model.TaskListener
 import hudson.util.FormValidation
 import hudson.util.ListBoxModel
-import org.jenkinsci.plugins.workflow.steps.AbstractStepDescriptorImpl
-import org.jenkinsci.plugins.workflow.steps.AbstractStepImpl
+import org.jenkinsci.plugins.workflow.steps.Step
+import org.jenkinsci.plugins.workflow.steps.StepContext
+import org.jenkinsci.plugins.workflow.steps.StepDescriptor
+import org.jenkinsci.plugins.workflow.steps.StepExecution
 import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.QueryParameter
 
+import static hudson.model.Result.FAILURE
+import static org.sonatype.nexus.ci.nxrm.Messages.NexusStagingMoveWorkflow_DisplayName
+import static org.sonatype.nexus.ci.nxrm.Messages.NexusStagingMoveWorkflow_FunctionName
+import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client
+
 class NexusStagingMoveWorkflowStep
-    extends AbstractStepImpl
-    implements NexusStaging
+    extends Step
 
 {
   final String nexusInstanceId
@@ -41,23 +53,28 @@ class NexusStagingMoveWorkflowStep
     this.destinationRepository = destinationRepository
   }
 
+  @Override
+  StepExecution start(final StepContext context) throws Exception {
+    new NexusStagingMoveWorkflowStepExecution(tagName, destinationRepository, nexusInstanceId, context)
+  }
+
   @Extension
   static final class DescriptorImpl
-      extends AbstractStepDescriptorImpl
+      extends StepDescriptor
   {
-
-    DescriptorImpl() {
-      super(NexusStagingMoveExecution)
+    @Override
+    Set<? extends Class<?>> getRequiredContext() {
+      return ImmutableSet.of(Run.class, TaskListener.class)
     }
 
     @Override
     String getFunctionName() {
-      return 'nexusStaging'
+      return NexusStagingMoveWorkflow_FunctionName()
     }
 
     @Override
     String getDisplayName() {
-      'Nexus Staging Component Move'
+      NexusStagingMoveWorkflow_DisplayName()
     }
 
     FormValidation doCheckNexusInstanceId(@QueryParameter String value) {
@@ -74,6 +91,59 @@ class NexusStagingMoveWorkflowStep
 
     ListBoxModel doFillDestinationRepositoryItems(@QueryParameter String nexusInstanceId) {
       NxrmUtil.doFillNexusRepositoryIdItems(nexusInstanceId)
+    }
+  }
+
+  static class NexusStagingMoveWorkflowStepExecution
+      extends StepExecution {
+
+    private String tagName
+
+    private String destinationRepository
+
+    private String nexusInstanceId
+
+    NexusStagingMoveWorkflowStepExecution(final String tagName, final String destinationRepository,
+                                          final String nexusInstanceId, final StepContext stepContext) {
+      super(stepContext)
+      this.tagName = tagName
+      this.destinationRepository = destinationRepository
+      this.nexusInstanceId = nexusInstanceId
+    }
+
+    @Override
+    boolean start() throws Exception {
+      def log = context.get(TaskListener.class).getLogger()
+      def run = context.get(Run.class)
+      def client
+
+      try {
+        client = nexus3Client(nexusInstanceId)
+      }
+      catch (RepositoryManagerException e) {
+        failBuild(run, log, e.message, e)
+      }
+
+      try {
+        context.onSuccess(client.move(destinationRepository, tagName))
+        return true
+      }
+      catch (RepositoryManagerException e) {
+        return failBuild(run, log, e.responseMessage.orElse(e.message), e)
+      }
+
+    }
+
+    @Override
+    void stop(@Nonnull final Throwable throwable) throws Exception {
+      // noop (synchronous step)
+    }
+
+    private boolean failBuild(Run run, PrintStream log, String reason, Throwable throwable) {
+      log.println("Failing build due to: ${reason}")
+      run.setResult(FAILURE)
+      context.onFailure(throwable)
+      return true
     }
   }
 }
