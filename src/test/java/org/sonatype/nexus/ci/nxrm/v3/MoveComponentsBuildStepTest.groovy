@@ -160,7 +160,7 @@ class MoveComponentsBuildStepTest
       assertThat(log, log.contains("Build step 'Nexus Repository Move Components' changed build result to FAILURE"))
   }
 
-  protected Nxrm3Configuration saveGlobalConfigurationWithNxrm3Configuration() {
+  private Nxrm3Configuration saveGlobalConfigurationWithNxrm3Configuration() {
     def configurationList = new ArrayList<NxrmConfiguration>()
     def nxrm3Configuration = new Nxrm3Configuration('id', 'internalId', 'displayName', 'http://foo.com', 'credentialsId')
     configurationList.push(nxrm3Configuration)
