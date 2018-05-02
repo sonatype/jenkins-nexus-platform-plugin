@@ -25,58 +25,27 @@ import org.junit.Rule
 import org.jvnet.hudson.test.JenkinsRule
 import spock.lang.Specification
 
-class NexusStagingMoveBuildStepTest
-//    extends Specification
+class MoveComponentsBuildStepTest
+    extends Specification
 {
 
-//  @Override
-//  NexusPublisherDescriptor getDescriptor() {
-//    return (NexusPublish erDescriptor) jenkins.getInstance().getDescriptor(NexusPublisherBuildStep.class)
-//  }
   @Rule
   public JenkinsRule jenkins = new JenkinsRule()
 
   RepositoryManagerV3Client nxrmClient = Mock()
 
-//  def 'it successfully completes a move operation based on a tag'() {
-  //    setup:
-  //      def nxrm2Configuration = saveGlobalConfigurationWithNxrm2Configuration()
-  //      def packageList = buildPackageList()
-  //      def nexusPublisher = new NexusPublisherBuildStep(nxrm2Configuration.id, 'maven-releases', packageList)
-  //
-  //      def project = jenkins.createFreeStyleProject()
-  //      project.getBuildersList().add(nexusPublisher)
-  //
-  //      GroovyMock(RepositoryManagerClientUtil.class, global: true)
-  //      RepositoryManagerClientUtil.nexus2Client(nxrm2Configuration.serverUrl, nxrm2Configuration.credentialsId) >> nxrmClient
-  //
-  //    when:
-  //      Run build = project.scheduleBuild2(0).get()
-  //
-  //    then:
-  //      jenkins.assertBuildStatus(Result.FAILURE, build)
-  //
-  //    and:
-  //      String log = jenkins.getLog(build)
-  //      log =~ /test.jar does not exist/
-  //      log =~ /Failing build due to missing expected files for Nexus Repository Manager Publisher/
-  //  }
-
-  def 'it fails build when uploads to Nexus Repository Manager fails'() {
+  def 'it successfully completes a move operation based on a tag'() {
     setup:
       def destinationRepository = 'maven-releases'
       def nexusInstanceId = "localInstance"
       def tagName = "foo"
-      def nxrm3Configuration = saveGlobalConfigurationWithNxrm3Configuration()
-      def nexusStagingMove = new NexusStagingMoveBuildStep(nexusInstanceId, tagName, destinationRepository)
+      def nexusStagingMove = new MoveComponentsBuildStep(nexusInstanceId, tagName, destinationRepository)
 
       def project = jenkins.createFreeStyleProject()
       project.getBuildersList().add(nexusStagingMove)
 
       GroovyMock(RepositoryManagerClientUtil.class, global: true)
-      RepositoryManagerClientUtil.nexus3Client(nxrm3Configuration.serverUrl) >> nxrmClient
-
-      nxrmClient.move(destinationRepository, tagName)
+      RepositoryManagerClientUtil.nexus3Client(nexusInstanceId) >> nxrmClient
 
     when:
       Run build = project.scheduleBuild2(0).get()
@@ -89,6 +58,31 @@ class NexusStagingMoveBuildStepTest
 //      log =~ /Upload of test.jar failed/
 //      log =~ /Failing build due to failure to upload file to Nexus Repository Manager Publisher/
   }
+
+    def 'it fails completes a move operation based on a tag'() {
+      setup:
+        def destinationRepository = 'maven-releases'
+        def nexusInstanceId = "localInstance"
+        def tagName = "foo"
+        def nexusStagingMove = new MoveComponentsBuildStep(nexusInstanceId, tagName, destinationRepository)
+
+        def project = jenkins.createFreeStyleProject()
+        project.getBuildersList().add(nexusStagingMove)
+
+        GroovyMock(RepositoryManagerClientUtil.class, global: true)
+        RepositoryManagerClientUtil.nexus3Client(nexusInstanceId) >> nxrmClient
+
+      when:
+        Run build = project.scheduleBuild2(0).get()
+
+      then:
+        jenkins.assertBuildStatus(Result.FAILURE, build)
+
+      and:
+        String log = jenkins.getLog(build)
+        log =~ /test.jar does not exist/
+        log =~ /Failing build due to missing expected files for Nexus Repository Manager Publisher/
+    }
 
 //  def 'it uploads a Maven package to Nexus Repository Manager'() {
 //    setup:
@@ -126,7 +120,7 @@ class NexusStagingMoveBuildStepTest
 
   protected Nxrm3Configuration saveGlobalConfigurationWithNxrm3Configuration() {
     def configurationList = new ArrayList<NxrmConfiguration>()
-    def nxrm3Configuration = new Nxrm3Configuration('id', 'internalId', 'displayName', 'http://foo.com', 'credentialsId')
+    def nxrm3Configuration = new Nxrm3Configuration('id', 'internalId', 'displayName', 'http://localhost', 'credentialsId')
     configurationList.push(nxrm3Configuration)
 
     def globalConfiguration = jenkins.getInstance().getDescriptorByType(GlobalNexusConfiguration.class)

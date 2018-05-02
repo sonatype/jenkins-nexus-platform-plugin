@@ -16,6 +16,8 @@ import javax.annotation.Nonnull
 
 import com.sonatype.nexus.api.exception.RepositoryManagerException
 
+import org.sonatype.nexus.ci.config.NxrmVersion
+import org.sonatype.nexus.ci.util.FormUtil
 import org.sonatype.nexus.ci.util.NxrmUtil
 
 import com.google.common.collect.ImmutableSet
@@ -32,11 +34,12 @@ import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.QueryParameter
 
 import static hudson.model.Result.FAILURE
-import static org.sonatype.nexus.ci.nxrm.Messages.NexusStagingMoveWorkflow_DisplayName
-import static org.sonatype.nexus.ci.nxrm.Messages.NexusStagingMoveWorkflow_FunctionName
+import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponentsBuildStep_DisplayName
+import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponentsBuildStep_FunctionName
+import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponentsBuildStep_Validation_TagNameRequired
 import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client
 
-class NexusStagingMoveWorkflowStep
+class MoveComponentsStep
     extends Step
 
 {
@@ -47,7 +50,7 @@ class NexusStagingMoveWorkflowStep
   final String destinationRepository
 
   @DataBoundConstructor
-  NexusStagingMoveWorkflowStep(final String nexusInstanceId, final String tagName, final String destinationRepository) {
+  MoveComponentsStep(final String nexusInstanceId, final String tagName, final String destinationRepository) {
     this.nexusInstanceId = nexusInstanceId
     this.tagName = tagName
     this.destinationRepository = destinationRepository
@@ -69,12 +72,12 @@ class NexusStagingMoveWorkflowStep
 
     @Override
     String getFunctionName() {
-      return NexusStagingMoveWorkflow_FunctionName()
+      return MoveComponentsBuildStep_FunctionName()
     }
 
     @Override
     String getDisplayName() {
-      NexusStagingMoveWorkflow_DisplayName()
+      return MoveComponentsBuildStep_DisplayName()
     }
 
     FormValidation doCheckNexusInstanceId(@QueryParameter String value) {
@@ -82,7 +85,7 @@ class NexusStagingMoveWorkflowStep
     }
 
     ListBoxModel doFillNexusInstanceIdItems() {
-      NxrmUtil.doFillNexusInstanceIdItems()
+      NxrmUtil.doFillNexusInstanceIdItems(NxrmVersion.NEXUS_3)
     }
 
     FormValidation doCheckDestinationRepository(@QueryParameter String value) {
@@ -92,10 +95,15 @@ class NexusStagingMoveWorkflowStep
     ListBoxModel doFillDestinationRepositoryItems(@QueryParameter String nexusInstanceId) {
       NxrmUtil.doFillNexusRepositoryIdItems(nexusInstanceId)
     }
+
+    FormValidation doCheckTagName(@QueryParameter String tagName) {
+      FormUtil.validateNotEmpty(tagName, MoveComponentsBuildStep_Validation_TagNameRequired())
+    }
   }
 
   static class NexusStagingMoveWorkflowStepExecution
-      extends StepExecution {
+      extends StepExecution
+  {
 
     private String tagName
 
@@ -115,35 +123,23 @@ class NexusStagingMoveWorkflowStep
     boolean start() throws Exception {
       def log = context.get(TaskListener.class).getLogger()
       def run = context.get(Run.class)
-      def client
 
       try {
-        client = nexus3Client(nexusInstanceId)
-      }
-      catch (RepositoryManagerException e) {
-        failBuild(run, log, e.message, e)
-      }
-
-      try {
+        def client = nexus3Client(nexusInstanceId)
         context.onSuccess(client.move(destinationRepository, tagName))
         return true
       }
       catch (RepositoryManagerException e) {
-        return failBuild(run, log, e.responseMessage.orElse(e.message), e)
+        log.println("Failing build due to: ${e.responseMessage.orElse(e.message)}")
+        run.setResult(FAILURE)
+        context.onFailure(e)
+        return false
       }
-
     }
 
     @Override
     void stop(@Nonnull final Throwable throwable) throws Exception {
       // noop (synchronous step)
-    }
-
-    private boolean failBuild(Run run, PrintStream log, String reason, Throwable throwable) {
-      log.println("Failing build due to: ${reason}")
-      run.setResult(FAILURE)
-      context.onFailure(throwable)
-      return true
     }
   }
 }

@@ -29,7 +29,7 @@ import hudson.model.Run
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 
-class NexusStagingMoveWorkflowStepTest
+class MoveComponentsStepTest
     extends NexusPublisherDescriptorTest
 {
   @Override

@@ -13,10 +13,11 @@
 package org.sonatype.nexus.ci.nxrm.v3
 
 import javax.annotation.Nonnull
-import javax.annotation.Nullable
 
 import com.sonatype.nexus.api.exception.RepositoryManagerException
 
+import org.sonatype.nexus.ci.config.NxrmVersion
+import org.sonatype.nexus.ci.util.FormUtil
 import org.sonatype.nexus.ci.util.NxrmUtil
 
 import hudson.Extension
@@ -34,10 +35,12 @@ import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.QueryParameter
 
 import static hudson.model.Result.FAILURE
-import static org.sonatype.nexus.ci.nxrm.Messages.NexusStagingMoveWorkflow_DisplayName
+
+import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponentsBuildStep_DisplayName
+import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponentsBuildStep_Validation_TagNameRequired
 import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client
 
-class NexusStagingMoveBuildStep
+class MoveComponentsBuildStep
     extends Builder
     implements SimpleBuildStep
 {
@@ -48,7 +51,7 @@ class NexusStagingMoveBuildStep
   final String destinationRepository
 
   @DataBoundConstructor
-  NexusStagingMoveBuildStep(final String nexusInstanceId, final String tagName, final String destinationRepository) {
+  MoveComponentsBuildStep(final String nexusInstanceId, final String tagName, final String destinationRepository) {
     this.nexusInstanceId = nexusInstanceId
     this.tagName = tagName
     this.destinationRepository = destinationRepository
@@ -59,27 +62,15 @@ class NexusStagingMoveBuildStep
                @Nonnull final TaskListener listener) throws InterruptedException, IOException
   {
     def log = listener.getLogger()
-    def client
 
     try {
-      client = nexus3Client(nexusInstanceId)
-    }
-    catch (RepositoryManagerException e) {
-      failBuild(run, log, e.message, e)
-    }
-
-    try {
+      def client = nexus3Client(nexusInstanceId)
       client.move(destinationRepository, tagName)
     }
     catch (RepositoryManagerException e) {
-       failBuild(run, log, e.responseMessage.orElse(e.message), e)
+      log.println("Failing build due to: ${e.responseMessage.orElse(e.message)}")
+      run.setResult(FAILURE)
     }
-  }
-
-  private void failBuild(Run run, PrintStream log, String reason, @Nullable Exception repoManagerExcep) {
-    log.println("Failing build due to: ${reason}")
-    run.setResult(FAILURE)
-    throw new IOException(reason, repoManagerExcep)
   }
 
   @Extension
@@ -88,7 +79,7 @@ class NexusStagingMoveBuildStep
   {
     @Override
     String getDisplayName() {
-      NexusStagingMoveWorkflow_DisplayName()
+      MoveComponentsBuildStep_DisplayName()
     }
 
     @Override
@@ -101,7 +92,7 @@ class NexusStagingMoveBuildStep
     }
 
     ListBoxModel doFillNexusInstanceIdItems() {
-      NxrmUtil.doFillNexusInstanceIdItems()
+      NxrmUtil.doFillNexusInstanceIdItems(NxrmVersion.NEXUS_3)
     }
 
     FormValidation doCheckDestinationRepository(@QueryParameter String value) {
@@ -110,6 +101,10 @@ class NexusStagingMoveBuildStep
 
     ListBoxModel doFillDestinationRepositoryItems(@QueryParameter String nexusInstanceId) {
       NxrmUtil.doFillNexusRepositoryIdItems(nexusInstanceId)
+    }
+
+    FormValidation doCheckTagName(@QueryParameter String tagName) {
+          FormUtil.validateNotEmpty(tagName, MoveComponentsBuildStep_Validation_TagNameRequired())
     }
   }
 }
