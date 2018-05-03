@@ -127,9 +127,8 @@ class MoveComponentsStepTest
   def 'it fails to complete a move operation based on a tag'() {
     setup:
 
-      def project = getProject('localhost', 'maven-releases', 'foo')
-
-      nxrm3Client.move(_, _) >> { throw new RepositoryManagerException("Move failed") }
+      def project = getProject('localhost', 'maven-releases', 'foo',
+          { throw new RepositoryManagerException("Move failed") })
 
     when:
       def build = project.scheduleBuild2(0).get()
@@ -155,9 +154,8 @@ class MoveComponentsStepTest
   def 'it fails to complete a move operation based on a tag as a workflow'() {
     setup:
 
-      def project = getProject('localhost', 'maven-releases', 'foo')
-
-      nxrm3Client.move(_, _) >> { throw new RepositoryManagerException("Move failed") }
+      def project = getWorkflowProject('localhost', 'maven-releases', 'foo'
+          , { throw new RepositoryManagerException("Move failed") })
 
     when:
       def build = project.scheduleBuild2(0).get()
@@ -213,8 +211,7 @@ class MoveComponentsStepTest
   }
 
   //Prepares a workflow job
-  def getWorkflowProject(String instance, String destination, String tagName,
-                                     Closure clientReturn = { nxrm3Client }) {
+  def getWorkflowProject(String instance, String destination, String tagName, Closure clientReturn = { nxrm3Client }) {
 
     def config = createNxrm3Config(instance)
 
