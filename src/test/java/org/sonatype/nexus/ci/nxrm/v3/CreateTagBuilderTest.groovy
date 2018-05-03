@@ -16,10 +16,13 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 
+import com.sonatype.nexus.api.exception.RepositoryManagerException
 import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client
 
 import org.sonatype.nexus.ci.config.GlobalNexusConfiguration
 import org.sonatype.nexus.ci.config.Nxrm3Configuration
+import org.sonatype.nexus.ci.nxrm.Messages
+import org.sonatype.nexus.ci.nxrm.v3.CreateTagBuilder.DescriptorImpl
 import org.sonatype.nexus.ci.util.RepositoryManagerClientUtil
 
 import hudson.model.Result
@@ -28,6 +31,12 @@ import org.junit.rules.TemporaryFolder
 import org.jvnet.hudson.test.JenkinsRule
 import spock.lang.Specification
 import spock.lang.Unroll
+
+import static hudson.util.FormValidation.Kind.ERROR
+import static hudson.util.FormValidation.Kind.OK
+import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagAttributesJson
+import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameEmpty
+import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameInvalid
 
 class CreateTagBuilderTest
     extends Specification
@@ -42,25 +51,16 @@ class CreateTagBuilderTest
 
   def 'creates a tag using workspace'() {
     setup:
-      def project = jenkins.createFreeStyleProject()
-      def workspace = temp.newFolder()
-      def attrFile = Paths.get(workspace.absolutePath, 'attrFile.json')
-      Files.write(attrFile, '{"foo": "bar"}'.bytes, StandardOpenOption.CREATE_NEW) // create file in workspace
       def tagName = 'create-tag-test'
-      def config = createNxrm3Config('nx3')
-      def builder = new CreateTagBuilder('nx3', tagName)
-      builder.setTagAttributesPath('attrFile.json') // uses relative path in workspace
-      builder.setTagAttributesJson('{"baz": "qux"}')
+      def job = prepareJob('nx3', tagName)
+      def attrFile = Paths.get(job.workspace.absolutePath, 'attr-file.json')
+      Files.write(attrFile, '{"foo": "bar"}'.bytes, StandardOpenOption.CREATE_NEW) // create file in workspace
 
-
-      project.setCustomWorkspace(workspace.absolutePath)
-      project.getBuildersList().add(builder)
-
-      GroovyMock(RepositoryManagerClientUtil.class, global: true)
-      RepositoryManagerClientUtil.nexus3Client(config.serverUrl, config.credentialsId) >> nxrm3Client
+      job.builder.setTagAttributesPath('attr-file.json') // uses relative path in workspace
+      job.builder.setTagAttributesJson('{"baz": "qux"}')
 
     when:
-      def build = project.scheduleBuild2(0).get()
+      def build = job.project.scheduleBuild2(0).get()
 
     then:
       1 * nxrm3Client.createTag(tagName, [foo: 'bar', baz: 'qux'])
@@ -68,33 +68,24 @@ class CreateTagBuilderTest
   }
 
   @Unroll
-  def 'tag attributes are optional - #description'(tagName, tagAttributeFile, tagAttributeJson, attributeMap,
+  def 'tag attributes are optional - #description'(tagName, attributesFile, attributesJson, attributeMap,
                                                    description)
   {
     setup:
-      def project = jenkins.createFreeStyleProject()
-      def workspace = temp.newFolder()
-      def config = createNxrm3Config('nx3')
-      def builder = new CreateTagBuilder('nx3', tagName)
+      def job = prepareJob('nx3', tagName)
 
-      if (tagAttributeFile) {
-        def attrFile = Paths.get(workspace.absolutePath, 'attr-file.json')
-        Files.write(attrFile, tagAttributeFile.bytes, StandardOpenOption.CREATE_NEW)
-        builder.setTagAttributesPath('attr-file.json')
+      if (attributesFile) {
+        def attrFile = Paths.get(job.workspace.absolutePath, 'attr-file.json')
+        Files.write(attrFile, attributesFile.bytes, StandardOpenOption.CREATE_NEW)
+        job.builder.setTagAttributesPath('attr-file.json')
       }
 
-      if (tagAttributeJson) {
-        builder.setTagAttributesJson(tagAttributeJson)
+      if (attributesJson) {
+        job.builder.setTagAttributesJson(attributesJson)
       }
-
-      project.setCustomWorkspace(workspace.absolutePath)
-      project.getBuildersList().add(builder)
-
-      GroovyMock(RepositoryManagerClientUtil.class, global: true)
-      RepositoryManagerClientUtil.nexus3Client(config.serverUrl, config.credentialsId) >> nxrm3Client
 
     when:
-      def build = project.scheduleBuild2(0).get()
+      def build = job.project.scheduleBuild2(0).get()
 
     then:
       1 * nxrm3Client.createTag(tagName, attributeMap)
@@ -102,38 +93,146 @@ class CreateTagBuilderTest
 
     where:
       tagName << ['tagFoo', 'tagBar', 'tagBaz']
-      tagAttributeFile << [null, '{"baz": "qux"}', null]
-      tagAttributeJson << ['{"foo": "bar"}', null, null]
+      attributesFile << [null, '{"baz": "qux"}', null]
+      attributesJson << ['{"foo": "bar"}', null, null]
       attributeMap << [[foo: 'bar'], [baz: 'qux'], null]
       description << ['no attribute file', 'no attribute json', 'no attributes']
   }
 
-  def 'tag attribute json is optional'() {
-
-  }
-
   def 'tag attribute json has priority over file attributes'() {
+    setup:
+      def tagName = 'create-tag-test'
+      def job = prepareJob('nx3', tagName)
+      def attrFile = Paths.get(job.workspace.absolutePath, 'attr-file.json')
+      Files.write(attrFile, '{"foo": "bar", "baz": "qux"}'.bytes,
+          StandardOpenOption.CREATE_NEW) // create file in workspace
 
+      job.builder.setTagAttributesPath('attr-file.json') // uses relative path in workspace
+      job.builder.setTagAttributesJson('{"foo": "quux"}')
+
+    when:
+      def build = job.project.scheduleBuild2(0).get()
+
+    then:
+      1 * nxrm3Client.createTag(tagName, [foo: 'quux', baz: 'qux'])
+      jenkins.assertBuildStatus(Result.SUCCESS, build)
   }
 
-  def 'descriptor validates json'() {
+  @Unroll
+  def 'descriptor validates tag name - #description'(tagName, validationKind, validationMessage, description) {
+    setup:
+      createNxrm3Config('validateTag')
+      def descriptor = (DescriptorImpl) jenkins.getInstance().getDescriptor(CreateTagBuilder)
 
+    when: 'attributes json is specified'
+      def validation = descriptor.doCheckTagName(tagName)
+
+    then: 'it validates the json string'
+      validation.kind == validationKind
+      validation.message == validationMessage
+
+    where:
+      tagName <<
+          ['valid-tag', '0test.all-valid_chars123', '', '_invalidTag', '.invalidTag', 'contains^%illegalChars',
+           'tooLong' *
+              (100)]
+      validationKind << [OK, OK, ERROR, ERROR, ERROR, ERROR, ERROR]
+      validationMessage <<
+          [null, null, CreateTag_Validation_TagNameEmpty(), CreateTag_Validation_TagNameInvalid(),
+           CreateTag_Validation_TagNameInvalid(), CreateTag_Validation_TagNameInvalid(),
+           CreateTag_Validation_TagNameInvalid()]
+      description <<
+          ['valid tag', 'all supported characters', 'cant be empty', 'cant start with underscore', 'cant start with dot',
+           'only word characters with dash and dot', 'tag is too long']
+  }
+
+  @Unroll
+  def 'descriptor validates json'(attributesJson, validationKind, validationMessage) {
+    setup:
+      createNxrm3Config('validateJson')
+      def descriptor = (DescriptorImpl) jenkins.getInstance().getDescriptor(CreateTagBuilder)
+
+    when: 'attributes json is specified'
+      def validation = descriptor.doCheckTagAttributesJson(attributesJson)
+
+    then: 'it validates the json string'
+      validation.kind == validationKind
+      validation.message == validationMessage
+
+    where:
+      attributesJson << ['{ "good": "json" }', 'invalid {} json string']
+      validationKind << [OK, ERROR]
+      validationMessage << [null, CreateTag_Validation_TagAttributesJson()]
   }
 
   def 'fails build if client cannot be built'() {
+    setup:
+      def job = prepareJob('failClient', 'foo', { throw new RepositoryManagerException("bad client") })
 
+    when:
+      def build = job.project.scheduleBuild2(0).get()
+
+    then:
+      String log = jenkins.getLog(build)
+      jenkins.assertBuildStatus(Result.FAILURE, build)
+      log =~ 'bad client'
   }
 
   def 'fails build on attribute file error'() {
+    setup:
+      def job = prepareJob('fileError', 'foo')
+      job.builder.setTagAttributesPath('attr-file-does-not-exist.json')
 
+    when:
+      def build = job.project.scheduleBuild2(0).get()
+
+    then:
+      String log = jenkins.getLog(build)
+      jenkins.assertBuildStatus(Result.FAILURE, build)
+      log =~ Messages.CreateTag_Error_TagAttributesPath()
   }
 
   def 'fails build on attribute json error'() {
+    setup:
+      def job = prepareJob('jsonError', 'foo')
+      job.builder.setTagAttributesJson('bad/{}json')
 
+    when:
+      def build = job.project.scheduleBuild2(0).get()
+
+    then:
+      String log = jenkins.getLog(build)
+      jenkins.assertBuildStatus(Result.FAILURE, build)
+      log =~ Messages.CreateTag_Error_TagAttributesJson()
   }
 
   def 'fails build on nxrm create tag error'() {
+    setup:
+      def job = prepareJob('nxrmError', 'foo')
 
+      nxrm3Client.createTag('foo', _) >> { throw new RepositoryManagerException('some create failure') }
+    when:
+      def build = job.project.scheduleBuild2(0).get()
+
+    then:
+      String log = jenkins.getLog(build)
+      jenkins.assertBuildStatus(Result.FAILURE, build)
+      log =~ 'some create failure'
+  }
+
+  private Map prepareJob(String instance, String tag, Closure clientReturn = { nxrm3Client }) {
+    def config = createNxrm3Config(instance)
+    def project = jenkins.createFreeStyleProject()
+    def workspace = temp.newFolder()
+    def builder = new CreateTagBuilder(instance, tag)
+
+    project.setCustomWorkspace(workspace.absolutePath)
+    project.getBuildersList().add(builder)
+
+    GroovyMock(RepositoryManagerClientUtil.class, global: true)
+    RepositoryManagerClientUtil.nexus3Client(config.serverUrl, config.credentialsId) >> { clientReturn.call() }
+
+    [project: project, builder: builder, workspace: workspace]
   }
 
   private Nxrm3Configuration createNxrm3Config(String id) {

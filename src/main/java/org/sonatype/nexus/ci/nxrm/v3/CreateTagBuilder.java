@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.annotation.Nonnull;
 
@@ -23,6 +24,7 @@ import com.sonatype.nexus.api.exception.RepositoryManagerException;
 import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client;
 
 import org.sonatype.nexus.ci.config.NxrmVersion;
+import org.sonatype.nexus.ci.util.FormUtil;
 import org.sonatype.nexus.ci.util.NxrmUtil;
 
 import com.google.gson.Gson;
@@ -53,8 +55,8 @@ import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_DisplayName;
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Error_TagAttributesJson;
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Error_TagAttributesPath;
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagAttributesJson;
-import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameRequired;
-import static org.sonatype.nexus.ci.util.FormUtil.validateNotEmpty;
+import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameEmpty;
+import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameInvalid;
 import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client;
 
 public class CreateTagBuilder
@@ -160,6 +162,8 @@ public class CreateTagBuilder
   public static final class DescriptorImpl
       extends BuildStepDescriptor<Builder>
   {
+    private static final Pattern VALID_TAG_NAME_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-][\\w\\-.]{0,255}$");
+
     @Override
     public boolean isApplicable(final Class<? extends AbstractProject> jobType) {
       return true;
@@ -171,7 +175,11 @@ public class CreateTagBuilder
     }
 
     FormValidation doCheckTagName(@QueryParameter String tagName) {
-      return validateNotEmpty(tagName, CreateTag_Validation_TagNameRequired());
+      if (isBlank(tagName)) {
+        return error(CreateTag_Validation_TagNameEmpty());
+      }
+
+      return VALID_TAG_NAME_PATTERN.matcher(tagName).matches() ? ok() : error(CreateTag_Validation_TagNameInvalid());
     }
 
     FormValidation doCheckNexusInstanceId(@QueryParameter String value) {
@@ -185,7 +193,7 @@ public class CreateTagBuilder
     FormValidation doCheckTagAttributesJson(@QueryParameter String tagAttributesJson) {
       if (!isBlank(tagAttributesJson)) {
         try {
-          return GSON.fromJson(tagAttributesJson, ATTRIBUTE_TYPE);
+          GSON.fromJson(tagAttributesJson, ATTRIBUTE_TYPE);
         }
         catch (Exception e) {
           return error(CreateTag_Validation_TagAttributesJson());
