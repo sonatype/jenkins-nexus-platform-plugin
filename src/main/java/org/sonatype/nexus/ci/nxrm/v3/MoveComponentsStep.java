@@ -57,10 +57,9 @@ public class MoveComponentsStep
     try {
       RepositoryManagerV3Client client = nexus3Client(nexusInstanceId);
       client.move(destinationRepository, tagName);
-      run.setResult(SUCCESS);
     }
     catch (RepositoryManagerException e) {
-      listener.getLogger().println("Failing build due to: ${e.responseMessage.orElse(e.message)}");
+      listener.getLogger().println("Failing build due to: " + e.getResponseMessage().orElse(e.getMessage()));
       run.setResult(FAILURE);
     }
   }
