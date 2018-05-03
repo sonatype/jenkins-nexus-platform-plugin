@@ -10,7 +10,7 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.sonatype.nexus.ci.nxrm.v3.pipeline
+package org.sonatype.nexus.ci.nxrm.v3
 
 import javax.annotation.Nonnull
 
@@ -20,28 +20,29 @@ import org.sonatype.nexus.ci.config.NxrmVersion
 import org.sonatype.nexus.ci.util.FormUtil
 import org.sonatype.nexus.ci.util.NxrmUtil
 
-import com.google.common.collect.ImmutableSet
 import hudson.Extension
+import hudson.FilePath
+import hudson.Launcher
+import hudson.model.AbstractProject
 import hudson.model.Run
 import hudson.model.TaskListener
+import hudson.tasks.BuildStepDescriptor
+import hudson.tasks.Builder
 import hudson.util.FormValidation
 import hudson.util.ListBoxModel
-import org.jenkinsci.plugins.workflow.steps.Step
-import org.jenkinsci.plugins.workflow.steps.StepContext
-import org.jenkinsci.plugins.workflow.steps.StepDescriptor
-import org.jenkinsci.plugins.workflow.steps.StepExecution
+import jenkins.tasks.SimpleBuildStep
 import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.QueryParameter
 
 import static hudson.model.Result.FAILURE
+import static hudson.model.Result.SUCCESS
 import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponentsBuildStep_DisplayName
-import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponentsBuildStep_FunctionName
 import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponentsBuildStep_Validation_TagNameRequired
 import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client
 
-class MoveComponentsStep
-    extends Step
-
+class MoveComponentsBuildStep_O
+    extends Builder
+    implements SimpleBuildStep
 {
   final String nexusInstanceId
 
@@ -50,34 +51,41 @@ class MoveComponentsStep
   final String destinationRepository
 
   @DataBoundConstructor
-  MoveComponentsStep(final String nexusInstanceId, final String tagName, final String destinationRepository) {
+  MoveComponentsBuildStep_O(final String nexusInstanceId, final String tagName, final String destinationRepository) {
     this.nexusInstanceId = nexusInstanceId
     this.tagName = tagName
     this.destinationRepository = destinationRepository
   }
 
   @Override
-  StepExecution start(final StepContext context) throws Exception {
-    new NexusStagingMoveWorkflowStepExecution(tagName, destinationRepository, nexusInstanceId, context)
+  void perform(@Nonnull final Run run, @Nonnull final FilePath workspace, @Nonnull final Launcher launcher,
+               @Nonnull final TaskListener listener) throws InterruptedException, IOException
+  {
+    def log = listener.getLogger()
+
+    try {
+      def client = nexus3Client(nexusInstanceId)
+      client.move(destinationRepository, tagName)
+      run.setResult(SUCCESS)
+    }
+    catch (RepositoryManagerException e) {
+      log.println("Failing build due to: ${e.responseMessage.orElse(e.message)}")
+      run.setResult(FAILURE)
+    }
   }
 
   @Extension
   static final class DescriptorImpl
-      extends StepDescriptor
+      extends BuildStepDescriptor<Builder>
   {
     @Override
-    Set<? extends Class<?>> getRequiredContext() {
-      return ImmutableSet.of(Run.class, TaskListener.class)
-    }
-
-    @Override
-    String getFunctionName() {
-      return MoveComponentsBuildStep_FunctionName()
-    }
-
-    @Override
     String getDisplayName() {
-      return MoveComponentsBuildStep_DisplayName()
+      MoveComponentsBuildStep_DisplayName()
+    }
+
+    @Override
+    boolean isApplicable(final Class<? extends AbstractProject> jobType) {
+      true
     }
 
     FormValidation doCheckNexusInstanceId(@QueryParameter String value) {
@@ -97,49 +105,7 @@ class MoveComponentsStep
     }
 
     FormValidation doCheckTagName(@QueryParameter String tagName) {
-      FormUtil.validateNotEmpty(tagName, MoveComponentsBuildStep_Validation_TagNameRequired())
-    }
-  }
-
-  static class NexusStagingMoveWorkflowStepExecution
-      extends StepExecution
-  {
-
-    private String tagName
-
-    private String destinationRepository
-
-    private String nexusInstanceId
-
-    NexusStagingMoveWorkflowStepExecution(final String tagName, final String destinationRepository,
-                                          final String nexusInstanceId, final StepContext stepContext) {
-      super(stepContext)
-      this.tagName = tagName
-      this.destinationRepository = destinationRepository
-      this.nexusInstanceId = nexusInstanceId
-    }
-
-    @Override
-    boolean start() throws Exception {
-      def log = context.get(TaskListener.class).getLogger()
-      def run = context.get(Run.class)
-
-      try {
-        def client = nexus3Client(nexusInstanceId)
-        context.onSuccess(client.move(destinationRepository, tagName))
-        return true
-      }
-      catch (RepositoryManagerException e) {
-        log.println("Failing build due to: ${e.responseMessage.orElse(e.message)}")
-        run.setResult(FAILURE)
-        context.onFailure(e)
-        return false
-      }
-    }
-
-    @Override
-    void stop(@Nonnull final Throwable throwable) throws Exception {
-      // noop (synchronous step)
+          FormUtil.validateNotEmpty(tagName, MoveComponentsBuildStep_Validation_TagNameRequired())
     }
   }
 }
