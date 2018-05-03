@@ -23,7 +23,8 @@ import org.sonatype.nexus.ci.util.FormUtil
 import org.sonatype.nexus.ci.util.RepositoryManagerClientUtil
 
 import hudson.model.Result
-import hudson.model.Run
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
+import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.junit.Rule
 import org.jvnet.hudson.test.JenkinsRule
 import spock.lang.Specification
@@ -40,7 +41,7 @@ class MoveComponentsStepTest
 
   def 'it populates Nexus instances'() {
     setup:
-      def nxrm3Configuration = saveGlobalConfigurationWithNxrm3Configuration()
+      def nxrm3Configuration = createNxrm3Config('id')
 
     when: 'nexus instance items are filled'
       def descriptor = getDescriptor()
@@ -61,7 +62,7 @@ class MoveComponentsStepTest
   def 'it populates the list of destination repositories'() {
     setup:
       GroovyMock(RepositoryManagerClientUtil.class, global: true)
-      def nxrm3Configuration = saveGlobalConfigurationWithNxrm3Configuration()
+      def nxrm3Configuration = createNxrm3Config('id')
 
       def client = Mock(RepositoryManagerV3Client.class)
       def repositories = [
@@ -98,7 +99,7 @@ class MoveComponentsStepTest
       def listBoxModel = descriptor.doFillDestinationRepositoryItems(nxrm3Configuration.id)
 
     then: 'ListBox has the correct size'
-      //nxrm3 client looks for hosted maven repos when populating this list
+      //only looking for 3 because nxrm3 client only looks for hosted maven repos when populating this list
       listBoxModel.size() == 3
 
     and: 'ListBox has empty item'
@@ -112,88 +113,118 @@ class MoveComponentsStepTest
 
   def 'it successfully completes a move operation based on a tag'() {
     setup:
-      def config = saveGlobalConfigurationWithNxrm3Configuration()
-      def destinationRepository = 'maven-releases'
-      def tagName = "foo"
-      def nexusStagingMove = new MoveComponentsStep(config.id, tagName, destinationRepository)
 
-
-      def project = jenkinsRule.createFreeStyleProject()
-      project.getBuildersList().add(nexusStagingMove)
-
-      GroovyMock(RepositoryManagerClientUtil.class, global: true)
-      RepositoryManagerClientUtil.nexus3Client(config.serverUrl, config.credentialsId) >> nxrm3Client
+      def project = getProject('localhost', 'maven-releases', 'foo')
 
     when:
-      Run build = project.scheduleBuild2(0).get()
+      def build = project.scheduleBuild2(0).get()
 
     then:
-      1 * nxrm3Client.move(destinationRepository, tagName)
+      1 * nxrm3Client.move('maven-releases', 'foo')
       jenkinsRule.assertBuildStatus(SUCCESS, build)
   }
 
   def 'it fails to complete a move operation based on a tag'() {
     setup:
-      def config = saveGlobalConfigurationWithNxrm3Configuration()
-      def destinationRepository = 'maven-releases'
-      def tagName = "foo"
-      def nexusStagingMove = new MoveComponentsStep(config.id, tagName, destinationRepository)
 
-      def project = jenkinsRule.createFreeStyleProject()
-      project.getBuildersList().add(nexusStagingMove)
+      def project = getProject('localhost', 'maven-releases', 'foo')
 
-      GroovyMock(RepositoryManagerClientUtil.class, global: true)
-      RepositoryManagerClientUtil.nexus3Client(config.serverUrl, config.credentialsId) >> nxrm3Client
       nxrm3Client.move(_, _) >> { throw new RepositoryManagerException("Move failed") }
 
     when:
-      Run build = project.scheduleBuild2(0).get()
+      def build = project.scheduleBuild2(0).get()
 
     then:
       jenkinsRule.assertBuildStatus(Result.FAILURE, build)
-
-    and:
       jenkinsRule.assertLogContains("Move failed", build)
-      jenkinsRule.assertLogContains("Build step 'Nexus Repository Move Components' changed build result to FAILURE", build)
   }
 
-  def 'it fails attempting to get an nxrm3 client with bad id'() {
+  def 'it successfully completes a move operation based on a tag as workflow'() {
     setup:
-      def destinationRepository = 'maven-releases'
-      def nexusInstanceId = "localInstance"
-      def tagName = "foo"
-      def nexusStagingMove = new MoveComponentsStep(nexusInstanceId, tagName, destinationRepository)
 
-      def project = jenkinsRule.createFreeStyleProject()
-      project.getBuildersList().add(nexusStagingMove)
-
-      GroovyMock(RepositoryManagerClientUtil.class, global: true)
-      RepositoryManagerClientUtil.nexus3Client('badId')
+      def project = getWorkflowProject('localhost', 'maven-releases', 'foo')
 
     when:
-      Run build = project.scheduleBuild2(0).get()
+      def build = project.scheduleBuild2(0).get()
+
+    then:
+      1 * nxrm3Client.move('maven-releases', 'foo')
+      jenkinsRule.assertBuildStatus(SUCCESS, build)
+  }
+
+  def 'it fails to complete a move operation based on a tag as a workflow'() {
+    setup:
+
+      def project = getProject('localhost', 'maven-releases', 'foo')
+
+      nxrm3Client.move(_, _) >> { throw new RepositoryManagerException("Move failed") }
+
+    when:
+      def build = project.scheduleBuild2(0).get()
 
     then:
       jenkinsRule.assertBuildStatus(Result.FAILURE, build)
-
-    and:
-      jenkinsRule.assertLogContains("Nexus Configuration localInstance not found.", build)
+      jenkinsRule.assertLogContains("Failing build due to: Move failed", build)
   }
 
-  DescriptorImpl getDescriptor() {
+  def 'it fails attempting to get an nxrm3 client with invalid id'() {
+    setup:
+      def project = getProject('invalidclient', 'maven-releases', 'foo',
+          { throw new RepositoryManagerException("localhost not found") } )
+
+    when:
+      def build = project.scheduleBuild2(0).get()
+
+    then:
+      jenkinsRule.assertBuildStatus(Result.FAILURE, build)
+      jenkinsRule.assertLogContains("localhost not found", build)
+  }
+
+  def getDescriptor() {
     return (DescriptorImpl) jenkinsRule.getInstance().getDescriptor(MoveComponentsStep.class)
   }
 
-
-  private Nxrm3Configuration saveGlobalConfigurationWithNxrm3Configuration() {
+  def createNxrm3Config(String id) {
     def configurationList = new ArrayList<NxrmConfiguration>()
-    def nxrm3Configuration = new Nxrm3Configuration('id', 'internalId', 'displayName', 'http://foo.com', 'credentialsId')
+    def nxrm3Configuration = new Nxrm3Configuration(id, "internal${id}",
+        'displayName', 'http://foo.com', 'credentialsId')
+
     configurationList.push(nxrm3Configuration)
 
-    def globalConfiguration = jenkinsRule.getInstance().getDescriptorByType(GlobalNexusConfiguration.class)
+    def globalConfiguration = jenkinsRule.getInstance().getDescriptorByType(GlobalNexusConfiguration)
     globalConfiguration.nxrmConfigs = configurationList
     globalConfiguration.save()
 
-    return nxrm3Configuration
+    nxrm3Configuration
+  }
+
+  def getProject(String instance, String destination, String tag, Closure clientReturn = { nxrm3Client }) {
+
+    def config = createNxrm3Config(instance)
+    def project = jenkinsRule.createFreeStyleProject()
+    def builder = new MoveComponentsStep(instance, tag, destination)
+
+    project.getBuildersList().add(builder)
+
+    GroovyMock(RepositoryManagerClientUtil.class, global: true)
+    RepositoryManagerClientUtil.nexus3Client(config.serverUrl, config.credentialsId) >> { clientReturn.call() }
+
+    project
+  }
+
+  //Prepares a workflow job
+  def getWorkflowProject(String instance, String destination, String tagName,
+                                     Closure clientReturn = { nxrm3Client }) {
+
+    def config = createNxrm3Config(instance)
+
+    def project = jenkinsRule.createProject(WorkflowJob.class, "nexusStagingMove")
+    project.setDefinition(new CpsFlowDefinition("node {moveComponents destinationRepository: '" + destination +
+        "', nexusInstanceId: '" + instance +"', tagName: '" + tagName + "'}"))
+
+    GroovyMock(RepositoryManagerClientUtil.class, global: true)
+    RepositoryManagerClientUtil.nexus3Client(config.serverUrl, config.credentialsId) >> { clientReturn.call() }
+
+    project
   }
 }
