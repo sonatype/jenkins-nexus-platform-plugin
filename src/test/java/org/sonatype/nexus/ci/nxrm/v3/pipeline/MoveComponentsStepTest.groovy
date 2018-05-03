@@ -73,6 +73,27 @@ class MoveComponentsStepTest
       jenkinsRule.assertLogContains("Failing build due to: Move failed", build)
   }
 
+  def 'it fails attempting to get an nxrm3 client'() {
+    setup:
+      def destination = 'maven-releases'
+      def instanceId = 'localInstance'
+      def tagName = 'foo'
+
+      WorkflowJob project = getWorkflowJob(instanceId, destination, tagName)
+
+      GroovyMock(RepositoryManagerClientUtil.class, global: true)
+      RepositoryManagerClientUtil.nexus3Client(instanceId) >> { throw new RepositoryManagerException("Getting client failed") }
+
+    when:
+      Run build = project.scheduleBuild2(0).get()
+
+    then:
+      jenkinsRule.assertBuildStatus(FAILURE, build)
+
+    and:
+      jenkinsRule.assertLogContains("Failing build due to: Getting client failed", build)
+  }
+
   DescriptorImpl getDescriptor() {
     return (DescriptorImpl) jenkinsRule.getInstance().getDescriptor(MoveComponentsBuildStep.class)
   }

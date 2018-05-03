@@ -70,6 +70,31 @@ class MoveComponentsBuildStepTest
       jenkinsRule.assertBuildStatus(Result.FAILURE, build)
 
     and:
+      jenkinsRule.assertLogContains("Move failed", build)
+      jenkinsRule.assertLogContains("Build step 'Nexus Repository Move Components' changed build result to FAILURE", build)
+  }
+
+  def 'it fails attempting to get an nxrm3 client'() {
+    setup:
+      def destinationRepository = 'maven-releases'
+      def nexusInstanceId = "localInstance"
+      def tagName = "foo"
+      def nexusStagingMove = new MoveComponentsBuildStep(nexusInstanceId, tagName, destinationRepository)
+
+      def project = jenkinsRule.createFreeStyleProject()
+      project.getBuildersList().add(nexusStagingMove)
+
+      GroovyMock(RepositoryManagerClientUtil.class, global: true)
+      RepositoryManagerClientUtil.nexus3Client(nexusInstanceId) >> { throw new RepositoryManagerException("Getting client failed") }
+
+    when:
+      Run build = project.scheduleBuild2(0).get()
+
+    then:
+      jenkinsRule.assertBuildStatus(Result.FAILURE, build)
+
+    and:
+      jenkinsRule.assertLogContains("Getting client failed", build)
       jenkinsRule.assertLogContains("Build step 'Nexus Repository Move Components' changed build result to FAILURE", build)
   }
 
