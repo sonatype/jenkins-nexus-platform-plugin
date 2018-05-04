@@ -25,7 +25,7 @@ import com.sonatype.nexus.api.exception.RepositoryManagerException;
 import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client;
 import com.sonatype.nexus.api.repository.v3.Tag;
 
-import org.sonatype.nexus.ci.nxrm.v3.commons.ConfigurableNexusInstance;
+import org.sonatype.nexus.ci.util.NxrmUtil;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -39,6 +39,7 @@ import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
 import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -51,6 +52,7 @@ import static hudson.Util.fixEmptyAndTrim;
 import static hudson.model.Result.FAILURE;
 import static hudson.util.FormValidation.error;
 import static hudson.util.FormValidation.ok;
+import static org.sonatype.nexus.ci.config.NxrmVersion.NEXUS_3;
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_DisplayName;
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Error_TagAttributesJson;
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Error_TagAttributesPath;
@@ -183,7 +185,6 @@ public class CreateTagBuilder
   @Symbol("createTag")
   public static final class DescriptorImpl
       extends BuildStepDescriptor<Builder>
-      implements ConfigurableNexusInstance
   {
     private static final Pattern VALID_TAG_NAME_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-][\\w\\-.]{0,255}$");
 
@@ -195,6 +196,14 @@ public class CreateTagBuilder
     @Override
     public String getDisplayName() {
       return CreateTag_DisplayName();
+    }
+
+    public FormValidation doCheckNexusInstanceId(@QueryParameter String value) {
+      return NxrmUtil.doCheckNexusInstanceId(value);
+    }
+
+    public ListBoxModel doFillNexusInstanceIdItems() {
+      return NxrmUtil.doFillNexusInstanceIdItems(NEXUS_3);
     }
 
     public FormValidation doCheckTagName(@QueryParameter String tagName) {
