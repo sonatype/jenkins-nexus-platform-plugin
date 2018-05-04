@@ -21,6 +21,7 @@ import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client
 import com.sonatype.nexus.api.repository.v3.Tag
 
 import org.sonatype.nexus.ci.config.GlobalNexusConfiguration
+import org.sonatype.nexus.ci.config.Nxrm2Configuration
 import org.sonatype.nexus.ci.config.Nxrm3Configuration
 import org.sonatype.nexus.ci.nxrm.Messages
 import org.sonatype.nexus.ci.nxrm.v3.CreateTagBuilder.DescriptorImpl
@@ -167,6 +168,26 @@ class CreateTagBuilderTest
       validationMessage << [null, CreateTag_Validation_TagAttributesJson()]
   }
 
+  def 'config ui does not show nxrm2 instances'() {
+    setup:
+      def configs = []
+      configs << new Nxrm3Configuration('nx3', "internalNx3", 'displayName', 'http://foo.com',
+          'credentialsId')
+      configs << new Nxrm2Configuration('nx2', "internalNx2", 'displayName', 'http://foo.com',
+          'credentialsId')
+
+      def globalConfiguration = jenkins.getInstance().getDescriptorByType(GlobalNexusConfiguration)
+      globalConfiguration.nxrmConfigs = configs
+      globalConfiguration.save()
+
+      def descriptor = (DescriptorImpl) jenkins.getInstance().getDescriptor(CreateTagBuilder)
+    when:
+      def items = descriptor.doFillNexusInstanceIdItems()
+
+    then:
+      items.findAll { it.value == 'nx2' }.size() == 0
+  }
+
   def 'fails build if client cannot be built'() {
     setup:
       def job = prepareJob('failClient', 'foo', { throw new RepositoryManagerException("bad client") })
@@ -220,6 +241,31 @@ class CreateTagBuilderTest
       String log = jenkins.getLog(build)
       jenkins.assertBuildStatus(Result.FAILURE, build)
       log =~ 'some create failure'
+  }
+
+  def 'fails build if an nxrm2 server is used'() {
+    setup:
+      def configs = []
+      configs << new Nxrm2Configuration('nx2', "internalNx2", 'displayName', 'http://foo.com',
+          'credentialsId')
+      def globalConfiguration = jenkins.getInstance().getDescriptorByType(GlobalNexusConfiguration)
+      globalConfiguration.nxrmConfigs = configs
+      globalConfiguration.save()
+
+      def project = jenkins.createFreeStyleProject()
+      def workspace = temp.newFolder()
+      def builder = new CreateTagBuilder('nx2', 'foo')
+
+      project.setCustomWorkspace(workspace.absolutePath)
+      project.getBuildersList().add(builder)
+
+    when:
+      def build = project.scheduleBuild2(0).get()
+
+    then:
+      String log = jenkins.getLog(build)
+      jenkins.assertBuildStatus(Result.FAILURE, build)
+      log =~ 'The specified instance is not a Nexus Repository Manager 3 server'
   }
 
   Map prepareJob(String instance, String tag, Closure clientReturn = { nxrm3Client }) {
