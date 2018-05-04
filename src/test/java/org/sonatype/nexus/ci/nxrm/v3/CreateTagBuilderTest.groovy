@@ -18,6 +18,7 @@ import java.nio.file.StandardOpenOption
 
 import com.sonatype.nexus.api.exception.RepositoryManagerException
 import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client
+import com.sonatype.nexus.api.repository.v3.Tag
 
 import org.sonatype.nexus.ci.config.GlobalNexusConfiguration
 import org.sonatype.nexus.ci.config.Nxrm3Configuration
@@ -63,7 +64,7 @@ class CreateTagBuilderTest
       def build = job.project.scheduleBuild2(0).get()
 
     then:
-      1 * nxrm3Client.createTag(tagName, [foo: 'bar', baz: 'qux'])
+      1 * nxrm3Client.createTag(tagName, [foo: 'bar', baz: 'qux']) >> new Tag(tagName, [foo: 'bar', baz: 'qux'])
       jenkins.assertBuildStatus(Result.SUCCESS, build)
   }
 
@@ -88,7 +89,7 @@ class CreateTagBuilderTest
       def build = job.project.scheduleBuild2(0).get()
 
     then:
-      1 * nxrm3Client.createTag(tagName, attributeMap)
+      1 * nxrm3Client.createTag(tagName, attributeMap) >> new Tag(tagName, attributeMap ?: [:])
       jenkins.assertBuildStatus(Result.SUCCESS, build)
 
     where:
@@ -114,14 +115,14 @@ class CreateTagBuilderTest
       def build = job.project.scheduleBuild2(0).get()
 
     then:
-      1 * nxrm3Client.createTag(tagName, [foo: 'quux', baz: 'qux'])
+      1 * nxrm3Client.createTag(tagName, [foo: 'quux', baz: 'qux']) >> new Tag(tagName, [foo: 'quux', baz: 'qux'])
       jenkins.assertBuildStatus(Result.SUCCESS, build)
   }
 
   @Unroll
   def 'descriptor validates tag name - #description'(tagName, validationKind, validationMessage, description) {
     setup:
-      createNxrm3Config('validateTag')
+      saveNxrmConfig('validateTag')
       def descriptor = (DescriptorImpl) jenkins.getInstance().getDescriptor(CreateTagBuilder)
 
     when: 'attributes json is specified'
@@ -135,21 +136,22 @@ class CreateTagBuilderTest
       tagName <<
           ['valid-tag', '0test.all-valid_chars123', '', '_invalidTag', '.invalidTag', 'contains^%illegalChars',
            'tooLong' *
-              (100)]
+               (100)]
       validationKind << [OK, OK, ERROR, ERROR, ERROR, ERROR, ERROR]
       validationMessage <<
           [null, null, CreateTag_Validation_TagNameEmpty(), CreateTag_Validation_TagNameInvalid(),
            CreateTag_Validation_TagNameInvalid(), CreateTag_Validation_TagNameInvalid(),
            CreateTag_Validation_TagNameInvalid()]
       description <<
-          ['valid tag', 'all supported characters', 'cant be empty', 'cant start with underscore', 'cant start with dot',
+          ['valid tag', 'all supported characters', 'cant be empty', 'cant start with underscore', 'cant start with ' +
+              'dot',
            'only word characters with dash and dot', 'tag is too long']
   }
 
   @Unroll
   def 'descriptor validates json'(attributesJson, validationKind, validationMessage) {
     setup:
-      createNxrm3Config('validateJson')
+      saveNxrmConfig('validateJson')
       def descriptor = (DescriptorImpl) jenkins.getInstance().getDescriptor(CreateTagBuilder)
 
     when: 'attributes json is specified'
@@ -220,8 +222,8 @@ class CreateTagBuilderTest
       log =~ 'some create failure'
   }
 
-  private Map prepareJob(String instance, String tag, Closure clientReturn = { nxrm3Client }) {
-    def config = createNxrm3Config(instance)
+  Map prepareJob(String instance, String tag, Closure clientReturn = { nxrm3Client }) {
+    def config = saveNxrmConfig(instance)
     def project = jenkins.createFreeStyleProject()
     def workspace = temp.newFolder()
     def builder = new CreateTagBuilder(instance, tag)
@@ -235,7 +237,7 @@ class CreateTagBuilderTest
     [project: project, builder: builder, workspace: workspace]
   }
 
-  private Nxrm3Configuration createNxrm3Config(String id) {
+  Nxrm3Configuration saveNxrmConfig(String id) {
     def configs = []
     def nxrm3Configuration = new Nxrm3Configuration(id, "internal${id}", 'displayName', 'http://foo.com',
         'credentialsId')

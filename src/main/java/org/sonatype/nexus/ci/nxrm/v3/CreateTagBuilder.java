@@ -18,14 +18,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 
 import com.sonatype.nexus.api.exception.RepositoryManagerException;
 import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client;
+import com.sonatype.nexus.api.repository.v3.Tag;
 
-import org.sonatype.nexus.ci.config.NxrmVersion;
-import org.sonatype.nexus.ci.util.FormUtil;
-import org.sonatype.nexus.ci.util.NxrmUtil;
+import org.sonatype.nexus.ci.nxrm.v3.commons.ConfigurableNexusInstance;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -39,7 +39,6 @@ import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
-import hudson.util.ListBoxModel;
 import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -48,6 +47,7 @@ import org.kohsuke.stapler.QueryParameter;
 
 import static com.sonatype.nexus.api.common.NexusStringUtils.isBlank;
 import static com.sonatype.nexus.api.common.NexusStringUtils.isNotBlank;
+import static hudson.Util.fixEmptyAndTrim;
 import static hudson.model.Result.FAILURE;
 import static hudson.util.FormValidation.error;
 import static hudson.util.FormValidation.ok;
@@ -71,24 +71,45 @@ public class CreateTagBuilder
 
   private final String tagName;
 
+  @CheckForNull
   private String tagAttributesPath;
 
+  @CheckForNull
   private String tagAttributesJson;
 
   @DataBoundConstructor
-  public CreateTagBuilder(final String nexusInstanceId, final String tagName) {
+  public CreateTagBuilder(final String nexusInstanceId, final String tagName)
+  {
     this.nexusInstanceId = nexusInstanceId;
     this.tagName = tagName;
   }
 
-  @DataBoundSetter
-  public void setTagAttributesPath(final String tagAttributesPath) {
-    this.tagAttributesPath = tagAttributesPath;
+  public String getNexusInstanceId() {
+    return nexusInstanceId;
+  }
+
+  public String getTagName() {
+    return tagName;
+  }
+
+  @CheckForNull
+  public String getTagAttributesPath() {
+    return tagAttributesPath;
   }
 
   @DataBoundSetter
-  public void setTagAttributesJson(final String tagAttributesJson) {
-    this.tagAttributesJson = tagAttributesJson;
+  public void setTagAttributesPath(@CheckForNull final String tagAttributesPath) {
+    this.tagAttributesPath = fixEmptyAndTrim(tagAttributesPath);
+  }
+
+  @CheckForNull
+  public String getTagAttributesJson() {
+    return tagAttributesJson;
+  }
+
+  @DataBoundSetter
+  public void setTagAttributesJson(@CheckForNull final String tagAttributesJson) {
+    this.tagAttributesJson = fixEmptyAndTrim(tagAttributesJson);
   }
 
   @Override
@@ -127,7 +148,8 @@ public class CreateTagBuilder
     }
 
     try {
-      client.createTag(tagName, tagAttributes);
+      Tag tag = client.createTag(tagName, tagAttributes);
+      listener.getLogger().println("Successfully created tag: '" + tag.toJson() + "'");
     }
     catch (RepositoryManagerException e) {
       failBuildAndThrow(run, listener, e.getResponseMessage().orElse(e.getMessage()), new IOException(e));
@@ -161,6 +183,7 @@ public class CreateTagBuilder
   @Symbol("createTag")
   public static final class DescriptorImpl
       extends BuildStepDescriptor<Builder>
+      implements ConfigurableNexusInstance
   {
     private static final Pattern VALID_TAG_NAME_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-][\\w\\-.]{0,255}$");
 
@@ -174,7 +197,7 @@ public class CreateTagBuilder
       return CreateTag_DisplayName();
     }
 
-    FormValidation doCheckTagName(@QueryParameter String tagName) {
+    public FormValidation doCheckTagName(@QueryParameter String tagName) {
       if (isBlank(tagName)) {
         return error(CreateTag_Validation_TagNameEmpty());
       }
@@ -182,15 +205,7 @@ public class CreateTagBuilder
       return VALID_TAG_NAME_PATTERN.matcher(tagName).matches() ? ok() : error(CreateTag_Validation_TagNameInvalid());
     }
 
-    FormValidation doCheckNexusInstanceId(@QueryParameter String value) {
-      return NxrmUtil.doCheckNexusInstanceId(value);
-    }
-
-    ListBoxModel doFillNexusInstanceIdItems() {
-      return NxrmUtil.doFillNexusInstanceIdItems(NxrmVersion.NEXUS_3);
-    }
-
-    FormValidation doCheckTagAttributesJson(@QueryParameter String tagAttributesJson) {
+    public FormValidation doCheckTagAttributesJson(@QueryParameter String tagAttributesJson) {
       if (!isBlank(tagAttributesJson)) {
         try {
           GSON.fromJson(tagAttributesJson, ATTRIBUTE_TYPE);
