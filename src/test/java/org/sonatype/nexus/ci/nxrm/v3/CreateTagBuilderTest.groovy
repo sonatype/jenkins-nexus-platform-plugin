@@ -28,6 +28,8 @@ import org.sonatype.nexus.ci.nxrm.v3.CreateTagBuilder.DescriptorImpl
 import org.sonatype.nexus.ci.util.RepositoryManagerClientUtil
 
 import hudson.model.Result
+import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
+import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.jvnet.hudson.test.JenkinsRule
@@ -66,6 +68,35 @@ class CreateTagBuilderTest
 
     then:
       1 * nxrm3Client.createTag(tagName, [foo: 'bar', baz: 'qux']) >> new Tag(tagName, [foo: 'bar', baz: 'qux'])
+      jenkins.assertBuildStatus(Result.SUCCESS, build)
+  }
+
+  def 'runnable from pipeline'() {
+    setup:
+      def instance = 'pipeline'
+      def tagName = 'pipeline-test-tag'
+      def attrFileName = 'attr-file.json'
+      def config = saveNxrmConfig(instance)
+      def project = jenkins.createProject(WorkflowJob, instance)
+      Files.createDirectories(Paths.get(jenkins.jenkins.getWorkspaceFor(project).toURI()))
+      project.setDefinition(new CpsFlowDefinition("""
+          node {
+            def file = new File("\${WORKSPACE}/${attrFileName}")
+            file.createNewFile()
+            file << '{"foo": "bar"}'
+            createTag nexusInstanceId: '${instance}', tagName: '${tagName}', tagAttributesPath: '${attrFileName}'
+          }
+          """))
+
+      GroovyMock(RepositoryManagerClientUtil.class, global: true)
+      RepositoryManagerClientUtil.nexus3Client(instance) >> nxrm3Client
+      RepositoryManagerClientUtil.nexus3Client(config.serverUrl, config.credentialsId) >> nxrm3Client
+
+    when:
+      def build = project.scheduleBuild2(0).get()
+
+    then:
+      1 * nxrm3Client.createTag(tagName, [foo: 'bar']) >> new Tag(tagName, [foo: 'bar'])
       jenkins.assertBuildStatus(Result.SUCCESS, build)
   }
 

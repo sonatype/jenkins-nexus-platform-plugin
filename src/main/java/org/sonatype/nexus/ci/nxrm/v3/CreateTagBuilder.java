@@ -161,8 +161,7 @@ public class CreateTagBuilder
   private Map<String, Object> parseAttributes(final FilePath workspace, final String filePath, final EnvVars env)
       throws IOException, InterruptedException
   {
-    FilePath attributesPath = new FilePath(workspace, env.expand(filePath));
-    return parseAttributes(attributesPath.readToString());
+    return parseAttributes(new FilePath(workspace, env.expand(filePath)).readToString());
   }
 
   private Map<String, Object> parseAttributes(String json) {
