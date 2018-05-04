@@ -116,7 +116,6 @@
         <artifactId>structs</artifactId>
         <version>1.14</version>
       </dependency>
-
       <dependency>
         <groupId>org.jenkins-ci.plugins.workflow</groupId>
         <artifactId>workflow-step-api</artifactId>
