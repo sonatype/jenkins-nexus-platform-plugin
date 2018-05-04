@@ -13,10 +13,13 @@
 package org.sonatype.nexus.ci.nxrm.v3;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
 import com.sonatype.nexus.api.exception.RepositoryManagerException;
+import com.sonatype.nexus.api.repository.v3.ComponentInfo;
 import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client;
 
 import org.sonatype.nexus.ci.config.NxrmVersion;
@@ -39,6 +42,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
 import static hudson.model.Result.FAILURE;
+import static java.util.stream.Collectors.joining;
 import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponentsBuildStep_DisplayName;
 import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponentsBuildStep_Validation_TagNameRequired;
 import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client;
@@ -67,7 +71,11 @@ public class MoveComponentsStep
   {
     try {
       RepositoryManagerV3Client client = nexus3Client(nexusInstanceId);
-      client.move(destinationRepository, tagName);
+      List<ComponentInfo> components = client.move(destinationRepository, tagName);
+      listener.getLogger().println("Successfully moved the following components to '" + destinationRepository + "':\n" +
+          components.stream()
+          .map(c -> c.getGroup() + ":" + c.getName() + ":" + c.getVersion())
+          .collect(joining("\n")));
     }
     catch (RepositoryManagerException e) {
       listener.getLogger().println("Failing build due to: " + e.getResponseMessage().orElse(e.getMessage()));
