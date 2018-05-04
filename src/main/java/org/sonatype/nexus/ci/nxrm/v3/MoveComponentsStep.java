@@ -110,4 +110,4 @@ public class MoveComponentsStep
       return FormUtil.validateNotEmpty(tagName, MoveComponentsBuildStep_Validation_TagNameRequired());
     }
   }
-  }
+}
