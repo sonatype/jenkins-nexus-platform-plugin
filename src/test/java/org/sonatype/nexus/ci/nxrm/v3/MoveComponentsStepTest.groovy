@@ -178,6 +178,27 @@ class MoveComponentsStepTest
       jenkinsRule.assertLogContains("localhost not found", build)
   }
 
+  def 'it fails due to missing parameter in workflow dsl'() {
+    setup:
+
+      def instance = 'someinstance'
+      def tagName = 'someTag'
+      def config = createNxrm3Config(instance)
+
+      def project = jenkinsRule.createProject(WorkflowJob.class, "nexusStagingMove")
+      project.setDefinition(new CpsFlowDefinition("node {moveComponents nexusInstanceId: '" + instance +"', tagName: '" + tagName + "'}"))
+
+      GroovyMock(RepositoryManagerClientUtil.class, global: true)
+      RepositoryManagerClientUtil.nexus3Client(config.serverUrl, config.credentialsId) >> { new IllegalArgumentException("missing arg") }
+
+    when:
+      def build = project.scheduleBuild2(0).get()
+
+    then:
+      jenkinsRule.assertBuildStatus(Result.FAILURE, build)
+      jenkinsRule.assertLogContains("IllegalArgumentException: missing arg", build)
+  }
+
   def getDescriptor() {
     return (DescriptorImpl) jenkinsRule.getInstance().getDescriptor(MoveComponentsStep.class)
   }
