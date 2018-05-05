@@ -14,7 +14,6 @@ package org.sonatype.nexus.ci.nxrm.v3;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
@@ -64,6 +63,17 @@ public class MoveComponentsStep
     this.destinationRepository = destinationRepository;
   }
 
+  public String getNexusInstanceId() {
+    return nexusInstanceId;
+  }
+
+  public String getTagName() {
+    return tagName;
+  }
+
+  public String getDestinationRepository() {
+    return destinationRepository;
+  }
 
   @Override
   public void perform(@Nonnull final Run run, @Nonnull final FilePath workspace, @Nonnull final Launcher launcher,
