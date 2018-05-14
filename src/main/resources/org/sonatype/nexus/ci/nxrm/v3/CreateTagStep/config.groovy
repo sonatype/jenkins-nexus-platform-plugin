@@ -10,16 +10,16 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.sonatype.nexus.ci.nxrm.v3.pipeline.CreateTagStep
+package org.sonatype.nexus.ci.nxrm.v3.CreateTagStep
 
 import org.sonatype.nexus.ci.util.NxrmUtil
 
 def f = namespace(lib.FormTagLib)
 def l = namespace(lib.LayoutTagLib)
 
-l.css(src: "${rootURL}/plugin/nexus-jenkins-plugin/css/nexus.css")
+l.css(src: "plugin/nexus-jenkins-plugin/css/nexus.css")
 
-f.section(title: descriptor.displayName) {
+f.section() {
   if (!NxrmUtil.hasNexusRepositoryManagerConfiguration()) {
     tr {
       td(class: 'setting-leftspace') {}

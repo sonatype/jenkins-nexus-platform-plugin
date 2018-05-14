@@ -281,13 +281,6 @@
     </dependency>
   </dependencies>
 
-  <repositories>
-    <repository>
-      <id>repository.sonatype.org</id>
-      <url>https://repository.sonatype.org</url>
-    </repository>
-  </repositories>
-
   <build>
     <resources>
       <resource>

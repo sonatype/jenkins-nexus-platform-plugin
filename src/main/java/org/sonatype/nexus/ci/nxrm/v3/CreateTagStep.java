@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -25,6 +24,7 @@ import com.sonatype.nexus.api.exception.RepositoryManagerException;
 import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client;
 import com.sonatype.nexus.api.repository.v3.Tag;
 
+import org.sonatype.nexus.ci.util.FormUtil;
 import org.sonatype.nexus.ci.util.NxrmUtil;
 
 import com.google.gson.Gson;
@@ -58,10 +58,9 @@ import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Error_TagAttributesJ
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Error_TagAttributesPath;
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagAttributesJson;
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameEmpty;
-import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameInvalid;
 import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client;
 
-public class CreateTagBuilder
+public class CreateTagStep
     extends Builder
     implements SimpleBuildStep
 {
@@ -73,14 +72,12 @@ public class CreateTagBuilder
 
   private final String tagName;
 
-  @CheckForNull
   private String tagAttributesPath;
 
-  @CheckForNull
   private String tagAttributesJson;
 
   @DataBoundConstructor
-  public CreateTagBuilder(final String nexusInstanceId, final String tagName)
+  public CreateTagStep(final @Nonnull String nexusInstanceId, final @Nonnull String tagName)
   {
     this.nexusInstanceId = nexusInstanceId;
     this.tagName = tagName;
@@ -127,7 +124,6 @@ public class CreateTagBuilder
       client = nexus3Client(nexusInstanceId);
     }
     catch (RepositoryManagerException e) {
-      e.getResponseMessage();
       failBuildAndThrow(run, listener, e.getResponseMessage().orElse(e.getMessage()), new IOException(e));
     }
 
@@ -185,8 +181,6 @@ public class CreateTagBuilder
   public static final class DescriptorImpl
       extends BuildStepDescriptor<Builder>
   {
-    private static final Pattern VALID_TAG_NAME_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-][\\w\\-.]{0,255}$");
-
     @Override
     public boolean isApplicable(final Class<? extends AbstractProject> jobType) {
       return true;
@@ -206,11 +200,7 @@ public class CreateTagBuilder
     }
 
     public FormValidation doCheckTagName(@QueryParameter String tagName) {
-      if (isBlank(tagName)) {
-        return error(CreateTag_Validation_TagNameEmpty());
-      }
-
-      return VALID_TAG_NAME_PATTERN.matcher(tagName).matches() ? ok() : error(CreateTag_Validation_TagNameInvalid());
+      return FormUtil.validateNotEmpty(tagName, CreateTag_Validation_TagNameEmpty());
     }
 
     public FormValidation doCheckTagAttributesJson(@QueryParameter String tagAttributesJson) {

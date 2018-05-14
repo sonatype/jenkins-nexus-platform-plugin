@@ -24,7 +24,7 @@ import org.sonatype.nexus.ci.config.GlobalNexusConfiguration
 import org.sonatype.nexus.ci.config.Nxrm2Configuration
 import org.sonatype.nexus.ci.config.Nxrm3Configuration
 import org.sonatype.nexus.ci.nxrm.Messages
-import org.sonatype.nexus.ci.nxrm.v3.CreateTagBuilder.DescriptorImpl
+import org.sonatype.nexus.ci.nxrm.v3.CreateTagStep.DescriptorImpl
 import org.sonatype.nexus.ci.util.RepositoryManagerClientUtil
 
 import hudson.model.Result
@@ -42,7 +42,7 @@ import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagAttrib
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameEmpty
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameInvalid
 
-class CreateTagBuilderTest
+class CreateTagStepTest
     extends Specification
 {
   @Rule
@@ -155,7 +155,7 @@ class CreateTagBuilderTest
   def 'descriptor validates tag name - #description'(tagName, validationKind, validationMessage, description) {
     setup:
       saveNxrmConfig('validateTag')
-      def descriptor = (DescriptorImpl) jenkins.getInstance().getDescriptor(CreateTagBuilder)
+      def descriptor = (DescriptorImpl) jenkins.getInstance().getDescriptor(CreateTagStep)
 
     when: 'attributes json is specified'
       def validation = descriptor.doCheckTagName(tagName)
@@ -184,7 +184,7 @@ class CreateTagBuilderTest
   def 'descriptor validates json'(attributesJson, validationKind, validationMessage) {
     setup:
       saveNxrmConfig('validateJson')
-      def descriptor = (DescriptorImpl) jenkins.getInstance().getDescriptor(CreateTagBuilder)
+      def descriptor = (DescriptorImpl) jenkins.getInstance().getDescriptor(CreateTagStep)
 
     when: 'attributes json is specified'
       def validation = descriptor.doCheckTagAttributesJson(attributesJson)
@@ -211,7 +211,7 @@ class CreateTagBuilderTest
       globalConfiguration.nxrmConfigs = configs
       globalConfiguration.save()
 
-      def descriptor = (DescriptorImpl) jenkins.getInstance().getDescriptor(CreateTagBuilder)
+      def descriptor = (DescriptorImpl) jenkins.getInstance().getDescriptor(CreateTagStep)
     when:
       def items = descriptor.doFillNexusInstanceIdItems()
 
@@ -285,7 +285,7 @@ class CreateTagBuilderTest
 
       def project = jenkins.createFreeStyleProject()
       def workspace = temp.newFolder()
-      def builder = new CreateTagBuilder('nx2', 'foo')
+      def builder = new CreateTagStep('nx2', 'foo')
 
       project.setCustomWorkspace(workspace.absolutePath)
       project.getBuildersList().add(builder)
@@ -299,11 +299,32 @@ class CreateTagBuilderTest
       log =~ 'The specified instance is not a Nexus Repository Manager 3 server'
   }
 
+  @Unroll
+  def 'it fails due to missing parameter in workflow dsl'(String stepArgs) {
+    setup:
+      def config = saveNxrmConfig('pipeline-fails')
+      def project = jenkins.createProject(WorkflowJob, 'pipeline-fails')
+      project.setDefinition(new CpsFlowDefinition("node { createTag ${stepArgs} } "))
+
+      GroovyMock(RepositoryManagerClientUtil.class, global: true)
+      RepositoryManagerClientUtil.nexus3Client(config.serverUrl, config.credentialsId) >> nxrm3Client
+
+    when:
+      def build = project.scheduleBuild2(0).get()
+
+    then:
+      jenkins.assertBuildStatus(Result.FAILURE, build)
+      jenkins.assertLogContains("IllegalArgumentException: Failed to prepare createTag step", build)
+
+    where:
+      stepArgs << ['nexusInstanceId: "pipeline-fails"', 'tagName: "foo"']
+  }
+
   Map prepareJob(String instance, String tag, Closure clientReturn = { nxrm3Client }) {
     def config = saveNxrmConfig(instance)
     def project = jenkins.createFreeStyleProject()
     def workspace = temp.newFolder()
-    def builder = new CreateTagBuilder(instance, tag)
+    def builder = new CreateTagStep(instance, tag)
 
     project.setCustomWorkspace(workspace.absolutePath)
     project.getBuildersList().add(builder)
