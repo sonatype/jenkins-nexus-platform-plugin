@@ -40,7 +40,6 @@ import static hudson.util.FormValidation.Kind.ERROR
 import static hudson.util.FormValidation.Kind.OK
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagAttributesJson
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameEmpty
-import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameInvalid
 
 class CreateTagStepTest
     extends Specification
@@ -157,27 +156,18 @@ class CreateTagStepTest
       saveNxrmConfig('validateTag')
       def descriptor = (DescriptorImpl) jenkins.getInstance().getDescriptor(CreateTagStep)
 
-    when: 'attributes json is specified'
+    when: 'tag name is set'
       def validation = descriptor.doCheckTagName(tagName)
 
-    then: 'it validates the json string'
+    then: 'it validates the tag name'
       validation.kind == validationKind
       validation.message == validationMessage
 
     where:
-      tagName <<
-          ['valid-tag', '0test.all-valid_chars123', '', '_invalidTag', '.invalidTag', 'contains^%illegalChars',
-           'tooLong' *
-               (100)]
-      validationKind << [OK, OK, ERROR, ERROR, ERROR, ERROR, ERROR]
-      validationMessage <<
-          [null, null, CreateTag_Validation_TagNameEmpty(), CreateTag_Validation_TagNameInvalid(),
-           CreateTag_Validation_TagNameInvalid(), CreateTag_Validation_TagNameInvalid(),
-           CreateTag_Validation_TagNameInvalid()]
-      description <<
-          ['valid tag', 'all supported characters', 'cant be empty', 'cant start with underscore', 'cant start with ' +
-              'dot',
-           'only word characters with dash and dot', 'tag is too long']
+      tagName << ['valid-tag', '']
+      validationKind << [OK, ERROR]
+      validationMessage << [null, CreateTag_Validation_TagNameEmpty()]
+      description << ['valid tag', 'cant be empty']
   }
 
   @Unroll
@@ -300,7 +290,7 @@ class CreateTagStepTest
   }
 
   @Unroll
-  def 'it fails due to missing parameter in workflow dsl'(String stepArgs) {
+  def 'fails build with missing parameter - #missingParam'(stepArgs, missingParam, expectedLogMsg) {
     setup:
       def config = saveNxrmConfig('pipeline-fails')
       def project = jenkins.createProject(WorkflowJob, 'pipeline-fails')
@@ -314,10 +304,12 @@ class CreateTagStepTest
 
     then:
       jenkins.assertBuildStatus(Result.FAILURE, build)
-      jenkins.assertLogContains("IllegalArgumentException: Failed to prepare createTag step", build)
+      jenkins.assertLogContains(expectedLogMsg, build)
 
     where:
       stepArgs << ['nexusInstanceId: "pipeline-fails"', 'tagName: "foo"']
+      missingParam << ['tagName', 'nexusInstanceId']
+      expectedLogMsg << ['Tag Name is required', 'Nexus Instance ID is required']
   }
 
   Map prepareJob(String instance, String tag, Closure clientReturn = { nxrm3Client }) {

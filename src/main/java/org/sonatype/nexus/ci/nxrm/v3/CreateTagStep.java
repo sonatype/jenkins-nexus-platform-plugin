@@ -46,6 +46,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
+import static com.sonatype.nexus.api.common.ArgumentUtils.checkArgument;
 import static com.sonatype.nexus.api.common.NexusStringUtils.isBlank;
 import static com.sonatype.nexus.api.common.NexusStringUtils.isNotBlank;
 import static hudson.Util.fixEmptyAndTrim;
@@ -77,10 +78,10 @@ public class CreateTagStep
   private String tagAttributesJson;
 
   @DataBoundConstructor
-  public CreateTagStep(final @Nonnull String nexusInstanceId, final @Nonnull String tagName)
+  public CreateTagStep(final String nexusInstanceId, final String tagName)
   {
-    this.nexusInstanceId = nexusInstanceId;
-    this.tagName = tagName;
+    this.nexusInstanceId = checkArgument(nexusInstanceId, isNotBlank(nexusInstanceId), "Nexus Instance ID is required");
+    this.tagName = checkArgument(tagName, isNotBlank(tagName), "Tag Name is required");
   }
 
   public String getNexusInstanceId() {
