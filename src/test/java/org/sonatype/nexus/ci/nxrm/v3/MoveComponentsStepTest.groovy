@@ -13,6 +13,7 @@
 package org.sonatype.nexus.ci.nxrm.v3
 
 import com.sonatype.nexus.api.exception.RepositoryManagerException
+import com.sonatype.nexus.api.repository.v3.ComponentInfo
 import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client
 
 import org.sonatype.nexus.ci.config.GlobalNexusConfiguration
@@ -28,6 +29,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.junit.Rule
 import org.jvnet.hudson.test.JenkinsRule
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import static hudson.model.Result.SUCCESS
 
@@ -96,7 +98,7 @@ class MoveComponentsStepTest
 
     when: 'destination nexus repository items are filled'
       def descriptor = getDescriptor()
-      def listBoxModel = descriptor.doFillDestinationRepositoryItems(nxrm3Configuration.id)
+      def listBoxModel = descriptor.doFillDestinationItems(nxrm3Configuration.id)
 
     then: 'ListBox has the correct size'
       //only looking for 3 because nxrm3 client only looks for hosted maven repos when populating this list
@@ -113,14 +115,13 @@ class MoveComponentsStepTest
 
   def 'it successfully completes a move operation based on a tag'() {
     setup:
-
       def project = getProject('localhost', 'maven-releases', 'foo')
 
     when:
       def build = project.scheduleBuild2(0).get()
 
     then:
-      1 * nxrm3Client.move('maven-releases', 'foo')
+      1 * nxrm3Client.move('maven-releases', 'foo') >> Arrays.asList(new ComponentInfo("foo", "boo", "1.0"))
       jenkinsRule.assertBuildStatus(SUCCESS, build)
   }
 
@@ -138,33 +139,6 @@ class MoveComponentsStepTest
       jenkinsRule.assertLogContains("Move failed", build)
   }
 
-  def 'it successfully completes a move operation based on a tag as workflow'() {
-    setup:
-
-      def project = getWorkflowProject('localhost', 'maven-releases', 'foo')
-
-    when:
-      def build = project.scheduleBuild2(0).get()
-
-    then:
-      1 * nxrm3Client.move('maven-releases', 'foo')
-      jenkinsRule.assertBuildStatus(SUCCESS, build)
-  }
-
-  def 'it fails to complete a move operation based on a tag as a workflow'() {
-    setup:
-
-      def project = getWorkflowProject('localhost', 'maven-releases', 'foo'
-          , { throw new RepositoryManagerException("Move failed") })
-
-    when:
-      def build = project.scheduleBuild2(0).get()
-
-    then:
-      jenkinsRule.assertBuildStatus(Result.FAILURE, build)
-      jenkinsRule.assertLogContains("Failing build due to: Move failed", build)
-  }
-
   def 'it fails attempting to get an nxrm3 client with invalid id'() {
     setup:
       def project = getProject('invalidclient', 'maven-releases', 'foo',
@@ -178,25 +152,56 @@ class MoveComponentsStepTest
       jenkinsRule.assertLogContains("localhost not found", build)
   }
 
-  def 'it fails due to missing parameter in workflow dsl'() {
+  def 'it successfully completes a move operation based on a tag as workflow'() {
     setup:
+      def project = getWorkflowProject('localhost', 'maven-releases', 'foo')
 
-      def instance = 'someinstance'
-      def tagName = 'someTag'
-      def config = createNxrm3Config(instance)
+    when:
+      def build = project.scheduleBuild2(0).get()
+
+    then:
+      1 * nxrm3Client.move('maven-releases', 'foo') >> Arrays.asList(new ComponentInfo("foo", "boo", "1.0"))
+      jenkinsRule.assertBuildStatus(SUCCESS, build)
+  }
+
+  def 'it fails to complete a move operation based on a tag as a workflow'() {
+      setup:
+
+        def project = getWorkflowProject('localhost', 'maven-releases', 'foo'
+            , { throw new RepositoryManagerException("Move failed") })
+
+      when:
+        def build = project.scheduleBuild2(0).get()
+
+      then:
+        jenkinsRule.assertBuildStatus(Result.FAILURE, build)
+        jenkinsRule.assertLogContains("Failing build due to: Move failed", build)
+    }
+
+  @Unroll
+  def 'it fails due to missing parameter in workflow dsl - #missingParam'(stepArgs, missingParam, expectedLogMsg) {
+    setup:
+      def config = createNxrm3Config('someInstance')
 
       def project = jenkinsRule.createProject(WorkflowJob.class, "nexusStagingMove")
-      project.setDefinition(new CpsFlowDefinition("node {moveComponents nexusInstanceId: '" + instance +"', tagName: '" + tagName + "'}"))
+      project.setDefinition(new CpsFlowDefinition("node {moveComponents ${stepArgs} }"))
 
       GroovyMock(RepositoryManagerClientUtil.class, global: true)
-      RepositoryManagerClientUtil.nexus3Client(config.serverUrl, config.credentialsId) >> { new IllegalArgumentException("missing arg") }
+      RepositoryManagerClientUtil.nexus3Client(config.serverUrl, config.credentialsId) >> nxrm3Client
 
     when:
       def build = project.scheduleBuild2(0).get()
 
     then:
       jenkinsRule.assertBuildStatus(Result.FAILURE, build)
-      jenkinsRule.assertLogContains("IllegalArgumentException: missing arg", build)
+      jenkinsRule.assertLogContains(expectedLogMsg, build)
+
+    where:
+      stepArgs << ['tagName: "foo", nexusInstanceId: "someInstance"',
+                   'destination: "maven-releases", nexusInstanceId: "someInstance"',
+                   'destination: "maven-releases", tagName: "foo"']
+      missingParam << ['destination', 'tagName', 'nexusInstanceId']
+      expectedLogMsg << ['Destination is required', 'Tag Name is required', 'Nexus Instance ID is required']
   }
 
   def getDescriptor() {
@@ -237,7 +242,7 @@ class MoveComponentsStepTest
     def config = createNxrm3Config(instance)
 
     def project = jenkinsRule.createProject(WorkflowJob.class, "nexusStagingMove")
-    project.setDefinition(new CpsFlowDefinition("node {moveComponents destinationRepository: '" + destination +
+    project.setDefinition(new CpsFlowDefinition("node {moveComponents destination: '" + destination +
         "', nexusInstanceId: '" + instance +"', tagName: '" + tagName + "'}"))
 
     GroovyMock(RepositoryManagerClientUtil.class, global: true)

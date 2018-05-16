@@ -40,10 +40,13 @@ import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 
+import static com.sonatype.nexus.api.common.ArgumentUtils.checkArgument;
+import static com.sonatype.nexus.api.common.NexusStringUtils.isNotBlank;
 import static hudson.model.Result.FAILURE;
 import static java.util.stream.Collectors.joining;
-import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponentsBuildStep_DisplayName;
-import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponentsBuildStep_Validation_TagNameRequired;
+import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponents_DisplayName;
+import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponents_Validation_DestinationRequired;
+import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponents_Validation_TagNameRequired;
 import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client;
 
 public class MoveComponentsStep
@@ -54,13 +57,16 @@ public class MoveComponentsStep
 
   private final String tagName;
 
-  private final String destinationRepository;
+  private final String destination;
 
   @DataBoundConstructor
-  public MoveComponentsStep(final String nexusInstanceId, final String tagName, final String destinationRepository) {
-    this.nexusInstanceId = nexusInstanceId;
-    this.tagName = tagName;
-    this.destinationRepository = destinationRepository;
+  public MoveComponentsStep(final String nexusInstanceId,  final String tagName, final String destination)
+  {
+    this.nexusInstanceId = checkArgument(nexusInstanceId, isNotBlank(nexusInstanceId),
+        "Nexus Instance ID is required");
+    this.destination = checkArgument(destination, isNotBlank(destination),
+        MoveComponents_Validation_DestinationRequired());
+    this.tagName = checkArgument(tagName, isNotBlank(tagName), MoveComponents_Validation_TagNameRequired());
   }
 
   public String getNexusInstanceId() {
@@ -71,8 +77,8 @@ public class MoveComponentsStep
     return tagName;
   }
 
-  public String getDestinationRepository() {
-    return destinationRepository;
+  public String getDestination() {
+    return destination;
   }
 
   @Override
@@ -81,8 +87,8 @@ public class MoveComponentsStep
   {
     try {
       RepositoryManagerV3Client client = nexus3Client(nexusInstanceId);
-      List<ComponentInfo> components = client.move(destinationRepository, tagName);
-      listener.getLogger().println("Successfully moved the following components to '" + destinationRepository + "':\n" +
+      List<ComponentInfo> components = client.move(destination, tagName);
+      listener.getLogger().println("Successfully moved the following components to '" + destination + "':\n" +
           components.stream()
           .map(c -> c.getGroup() + ":" + c.getName() + ":" + c.getVersion())
           .collect(joining("\n")));
@@ -100,7 +106,7 @@ public class MoveComponentsStep
   {
     @Override
     public String getDisplayName() {
-      return MoveComponentsBuildStep_DisplayName();
+      return MoveComponents_DisplayName();
     }
 
     @Override
@@ -116,16 +122,16 @@ public class MoveComponentsStep
       return NxrmUtil.doFillNexusInstanceIdItems(NxrmVersion.NEXUS_3);
     }
 
-    public FormValidation doCheckDestinationRepository(@QueryParameter String value) {
+    public FormValidation doCheckDestination(@QueryParameter String value) {
       return NxrmUtil.doCheckNexusRepositoryId(value);
     }
 
-    public ListBoxModel doFillDestinationRepositoryItems(@QueryParameter String nexusInstanceId) {
+    public ListBoxModel doFillDestinationItems(@QueryParameter String nexusInstanceId) {
       return NxrmUtil.doFillNexusRepositoryIdItems(nexusInstanceId);
     }
 
     public FormValidation doCheckTagName(@QueryParameter String tagName) {
-      return FormUtil.validateNotEmpty(tagName, MoveComponentsBuildStep_Validation_TagNameRequired());
+      return FormUtil.validateNotEmpty(tagName, MoveComponents_Validation_TagNameRequired());
     }
   }
 }

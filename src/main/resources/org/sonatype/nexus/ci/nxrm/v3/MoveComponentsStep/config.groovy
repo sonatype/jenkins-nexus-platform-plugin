@@ -17,7 +17,7 @@ import org.sonatype.nexus.ci.util.NxrmUtil
 def f = namespace(lib.FormTagLib)
 def l = namespace(lib.LayoutTagLib)
 
-l.css(src: "${rootURL}/plugin/nexus-jenkins-plugin/css/nexus.css")
+l.css(src: "plugin/nexus-jenkins-plugin/css/nexus.css")
 
 f.section(title: descriptor.displayName) {
   if (!NxrmUtil.hasNexusRepositoryManagerConfiguration()) {
@@ -42,7 +42,7 @@ f.section(title: descriptor.displayName) {
     f.select()
   }
 
-  f.entry(title: _('Destination Repository'), field: 'destinationRepository') {
+  f.entry(title: _('Destination Repository'), field: 'destination') {
     f.select()
   }
 
