@@ -44,9 +44,10 @@ import static com.sonatype.nexus.api.common.ArgumentUtils.checkArgument;
 import static com.sonatype.nexus.api.common.NexusStringUtils.isNotBlank;
 import static hudson.model.Result.FAILURE;
 import static java.util.stream.Collectors.joining;
+import static org.sonatype.nexus.ci.nxrm.Messages.Common_Validation_NexusInstanceIDRequired;
+import static org.sonatype.nexus.ci.nxrm.Messages.Common_Validation_Staging_TagNameRequired;
 import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponents_DisplayName;
 import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponents_Validation_DestinationRequired;
-import static org.sonatype.nexus.ci.nxrm.Messages.MoveComponents_Validation_TagNameRequired;
 import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client;
 
 public class MoveComponentsStep
@@ -63,10 +64,10 @@ public class MoveComponentsStep
   public MoveComponentsStep(final String nexusInstanceId,  final String tagName, final String destination)
   {
     this.nexusInstanceId = checkArgument(nexusInstanceId, isNotBlank(nexusInstanceId),
-        "Nexus Instance ID is required");
+        Common_Validation_NexusInstanceIDRequired());
     this.destination = checkArgument(destination, isNotBlank(destination),
         MoveComponents_Validation_DestinationRequired());
-    this.tagName = checkArgument(tagName, isNotBlank(tagName), MoveComponents_Validation_TagNameRequired());
+    this.tagName = checkArgument(tagName, isNotBlank(tagName), Common_Validation_Staging_TagNameRequired());
   }
 
   public String getNexusInstanceId() {
@@ -88,7 +89,7 @@ public class MoveComponentsStep
     try {
       RepositoryManagerV3Client client = nexus3Client(nexusInstanceId);
       List<ComponentInfo> components = client.move(destination, tagName);
-      listener.getLogger().println("Successfully moved the following components to '" + destination + "':\n" +
+      listener.getLogger().println("Move successful. Destination: '" + destination + "' Components moved:\n" +
           components.stream()
           .map(c -> c.getGroup() + ":" + c.getName() + ":" + c.getVersion())
           .collect(joining("\n")));
@@ -131,7 +132,7 @@ public class MoveComponentsStep
     }
 
     public FormValidation doCheckTagName(@QueryParameter String tagName) {
-      return FormUtil.validateNotEmpty(tagName, MoveComponents_Validation_TagNameRequired());
+      return FormUtil.validateNotEmpty(tagName, Common_Validation_Staging_TagNameRequired());
     }
   }
 }
