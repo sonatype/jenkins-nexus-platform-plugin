@@ -54,11 +54,12 @@ import static hudson.model.Result.FAILURE;
 import static hudson.util.FormValidation.error;
 import static hudson.util.FormValidation.ok;
 import static org.sonatype.nexus.ci.config.NxrmVersion.NEXUS_3;
+import static org.sonatype.nexus.ci.nxrm.Messages.Common_Validation_NexusInstanceIDRequired;
+import static org.sonatype.nexus.ci.nxrm.Messages.Common_Validation_Staging_TagNameRequired;
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_DisplayName;
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Error_TagAttributesJson;
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Error_TagAttributesPath;
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagAttributesJson;
-import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameEmpty;
 import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client;
 
 public class CreateTagStep
@@ -80,8 +81,9 @@ public class CreateTagStep
   @DataBoundConstructor
   public CreateTagStep(final String nexusInstanceId, final String tagName)
   {
-    this.nexusInstanceId = checkArgument(nexusInstanceId, isNotBlank(nexusInstanceId), "Nexus Instance ID is required");
-    this.tagName = checkArgument(tagName, isNotBlank(tagName), "Tag Name is required");
+    this.nexusInstanceId = checkArgument(nexusInstanceId, isNotBlank(nexusInstanceId),
+        Common_Validation_NexusInstanceIDRequired());
+    this.tagName = checkArgument(tagName, isNotBlank(tagName), Common_Validation_Staging_TagNameRequired());
   }
 
   public String getNexusInstanceId() {
@@ -201,7 +203,7 @@ public class CreateTagStep
     }
 
     public FormValidation doCheckTagName(@QueryParameter String tagName) {
-      return FormUtil.validateNotEmpty(tagName, CreateTag_Validation_TagNameEmpty());
+      return FormUtil.validateNotEmpty(tagName, Common_Validation_Staging_TagNameRequired());
     }
 
     public FormValidation doCheckTagAttributesJson(@QueryParameter String tagAttributesJson) {

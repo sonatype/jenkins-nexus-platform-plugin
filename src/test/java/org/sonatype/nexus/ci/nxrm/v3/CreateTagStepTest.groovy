@@ -38,8 +38,8 @@ import spock.lang.Unroll
 
 import static hudson.util.FormValidation.Kind.ERROR
 import static hudson.util.FormValidation.Kind.OK
+import static org.sonatype.nexus.ci.nxrm.Messages.Common_Validation_Staging_TagNameRequired
 import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagAttributesJson
-import static org.sonatype.nexus.ci.nxrm.Messages.CreateTag_Validation_TagNameEmpty
 
 class CreateTagStepTest
     extends Specification
@@ -166,7 +166,7 @@ class CreateTagStepTest
     where:
       tagName << ['valid-tag', '']
       validationKind << [OK, ERROR]
-      validationMessage << [null, CreateTag_Validation_TagNameEmpty()]
+      validationMessage << [null, Common_Validation_Staging_TagNameRequired()]
       description << ['valid tag', 'cant be empty']
   }
 
