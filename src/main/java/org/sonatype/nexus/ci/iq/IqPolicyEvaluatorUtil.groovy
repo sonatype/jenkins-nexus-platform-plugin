@@ -25,6 +25,7 @@ import hudson.model.Result
 import hudson.model.Run
 import hudson.model.TaskListener
 import org.apache.commons.lang.exception.ExceptionUtils
+import org.apache.http.client.HttpResponseException
 
 import static com.google.common.base.Preconditions.checkArgument
 
@@ -91,11 +92,29 @@ class IqPolicyEvaluatorUtil
     if (!isNetworkError || failBuildOnNetworkError) {
       throw e
     }
+    else if (isHttp404Error(e)) {
+      listener.logger.println Messages._IqPolicyEvaluation_ResourceNotFound()
+      run.result = Result.FAILURE
+      return null
+    }
     else {
       listener.logger.println ExceptionUtils.getStackTrace(e)
       run.result = Result.UNSTABLE
       return null
     }
+  }
+
+  private static boolean isHttp404Error(final Exception throwable) {
+    boolean result = false
+    int httpResponseExceptionIndex = ExceptionUtils.indexOfType(throwable, HttpResponseException)
+    if (httpResponseExceptionIndex >= 0) {
+      Throwable[] throwables = ExceptionUtils.getThrowables(throwable)
+      HttpResponseException httpResponseException = (HttpResponseException) throwables[httpResponseExceptionIndex]
+      if (httpResponseException.statusCode == 404) {
+        result = true
+      }
+    }
+    return result
   }
 
   private static boolean isNetworkError(final Exception throwable) {
