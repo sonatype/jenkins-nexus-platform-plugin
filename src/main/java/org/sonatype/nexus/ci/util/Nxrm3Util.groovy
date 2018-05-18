@@ -21,6 +21,7 @@ import static com.sonatype.nexus.api.common.NexusStringUtils.isNotBlank
 import static org.sonatype.nexus.ci.config.GlobalNexusConfiguration.getGlobalNexusConfiguration
 import static org.sonatype.nexus.ci.config.NxrmVersion.NEXUS_3
 import static org.sonatype.nexus.ci.util.FormUtil.newListBoxModel
+import static org.sonatype.nexus.ci.util.FormUtil.newListBoxModelWithEmptyOption
 import static org.sonatype.nexus.ci.util.RepositoryManagerClientUtil.nexus3Client
 
 class Nxrm3Util
@@ -53,6 +54,10 @@ class Nxrm3Util
    * Return Nexus all hosted repositories regardless of format.
    */
   static ListBoxModel doFillNexusHostedRepositoryIdItems(final String nexusInstanceId) {
+    if (!nexusInstanceId) {
+      return newListBoxModelWithEmptyOption()
+    }
+
     def configuration = globalNexusConfiguration.nxrmConfigs.find { it.id == nexusInstanceId }
 
     if (configuration.version != NEXUS_3) {
