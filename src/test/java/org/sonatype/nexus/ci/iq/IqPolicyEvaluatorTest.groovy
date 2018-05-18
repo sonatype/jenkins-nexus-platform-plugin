@@ -413,7 +413,7 @@ class IqPolicyEvaluatorTest
     then:
       noExceptionThrown()
       1 * run.setResult(Result.FAILURE)
-      1 * logger.println({ Messages._IqPolicyEvaluation_ResourceNotFound().toString() })
+      1 * logger.println({ Messages._IqPolicyEvaluation_AutoAppMissing().toString() })
 
     where:
       exception                                         | failBuildOnNetworkError || expectedException | expectedMessage

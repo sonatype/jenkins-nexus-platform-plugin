@@ -56,7 +56,7 @@ class IqPolicyEvaluatorUtil
       }
       catch (IqClientException e) {
         if (isHttp404Error(e)) {
-          listener.logger.println Messages._IqPolicyEvaluation_ResourceNotFound()
+          listener.logger.println Messages._IqPolicyEvaluation_AutoAppMissing()
           run.result = Result.FAILURE
           return null
         }
