@@ -112,16 +112,13 @@ class IqPolicyEvaluatorUtil
   }
 
   private static boolean isHttp404Error(final Exception throwable) {
-    boolean result = false
     int httpResponseExceptionIndex = ExceptionUtils.indexOfType(throwable, HttpResponseException)
     if (httpResponseExceptionIndex >= 0) {
       Throwable[] throwables = ExceptionUtils.getThrowables(throwable)
       HttpResponseException httpResponseException = (HttpResponseException) throwables[httpResponseExceptionIndex]
-      if (httpResponseException.statusCode == 404) {
-        result = true
-      }
+      return httpResponseException.statusCode == 404
     }
-    return result
+    return false
   }
 
   private static boolean isNetworkError(final Exception throwable) {
