@@ -12,7 +12,6 @@
  */
 package org.sonatype.nexus.ci.util
 
-import com.sonatype.nexus.api.common.NexusStringUtils
 import com.sonatype.nexus.api.repository.v3.Repository
 
 import hudson.util.ListBoxModel
@@ -35,7 +34,7 @@ class Nxrm3Util
       throw new IllegalArgumentException('Specified Nexus Repository Manager instance is not a 3.x server')
     }
 
-    getApplicableRepositories(configuration.serverUrl, configuration.credentialsId, 'maven')
+    getApplicableRepositories(configuration.serverUrl, configuration.credentialsId, 'maven2')
   }
 
   /**
