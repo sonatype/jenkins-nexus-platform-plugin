@@ -24,7 +24,9 @@ import hudson.Launcher
 import hudson.model.Result
 import hudson.model.Run
 import hudson.model.TaskListener
+import org.apache.commons.httpclient.HttpStatus
 import org.apache.commons.lang.exception.ExceptionUtils
+import org.apache.http.client.HttpResponseException
 
 import static com.google.common.base.Preconditions.checkArgument
 
@@ -49,8 +51,20 @@ class IqPolicyEvaluatorUtil
           new IqClientFactoryConfiguration(credentialsId: iqPolicyEvaluator.jobCredentialsId, context: run.parent,
               log: loggerBridge))
 
-      def verified = iqClient.verifyOrCreateApplication(applicationId)
-      checkArgument(verified, 'The application ID ' + applicationId + ' is invalid.')
+      try {
+        def verified = iqClient.verifyOrCreateApplication(applicationId)
+        checkArgument(verified, 'The application ID ' + applicationId + ' is invalid.')
+      }
+      catch (IqClientException e) {
+        if (isHttp404Error(e)) {
+          listener.logger.println Messages._IqPolicyEvaluation_AutoAppMissing()
+          run.result = Result.FAILURE
+          return null
+        }
+        else {
+          throw e
+        }
+      }
 
       def envVars = run.getEnvironment(listener)
       def expandedScanPatterns = getScanPatterns(iqPolicyEvaluator.iqScanPatterns, envVars)
@@ -96,6 +110,16 @@ class IqPolicyEvaluatorUtil
       run.result = Result.UNSTABLE
       return null
     }
+  }
+
+  private static boolean isHttp404Error(final Exception throwable) {
+    int httpResponseExceptionIndex = ExceptionUtils.indexOfType(throwable, HttpResponseException)
+    if (httpResponseExceptionIndex >= 0) {
+      Throwable[] throwables = ExceptionUtils.getThrowables(throwable)
+      HttpResponseException httpResponseException = (HttpResponseException) throwables[httpResponseExceptionIndex]
+      return httpResponseException.statusCode == HttpStatus.SC_NOT_FOUND
+    }
+    return false
   }
 
   private static boolean isNetworkError(final Exception throwable) {

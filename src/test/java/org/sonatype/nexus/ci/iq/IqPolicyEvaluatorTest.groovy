@@ -32,6 +32,7 @@ import hudson.model.Run
 import hudson.model.TaskListener
 import hudson.remoting.Channel
 import org.apache.commons.lang.exception.ExceptionUtils
+import org.apache.http.client.HttpResponseException
 import org.slf4j.Logger
 import spock.lang.Specification
 import spock.util.mop.ConfineMetaClassChanges
@@ -393,5 +394,31 @@ class IqPolicyEvaluatorTest
       0 * log.println("WARNING: IQ Server evaluation of application appId detected warnings.")
       1 * log.println('\nThe detailed report can be viewed online at http://server/report\n' +
           'Summary of policy violations: 0 critical, 0 severe, 0 moderate')
+  }
+
+  def 'Auto App Creation not supported by IQ Server'() {
+    setup:
+      iqClient.verifyOrCreateApplication(*_) >> { throw exception }
+      def buildStep = new IqPolicyEvaluatorBuildStep('stage', new SelectedApplication('appId'),
+          [new ScanPattern('*.jar')], [],
+          failBuildOnNetworkError, '131-cred')
+      PrintStream logger = Mock()
+      TaskListener listener = Mock() {
+        getLogger() >> logger
+      }
+
+    when:
+      buildStep.perform(run, workspace, launcher, listener)
+
+    then:
+      noExceptionThrown()
+      1 * run.setResult(Result.FAILURE)
+      1 * logger.println({ Messages._IqPolicyEvaluation_AutoAppMissing().toString() })
+
+    where:
+      exception                                         | failBuildOnNetworkError || expectedException | expectedMessage
+      new IqClientException('BOOM!!',
+          new IOException('CRASH',
+              new HttpResponseException(404, 'CRASH'))) | false                   || null              | ''
   }
 }
