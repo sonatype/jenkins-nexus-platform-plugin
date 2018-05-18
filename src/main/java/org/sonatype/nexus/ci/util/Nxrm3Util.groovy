@@ -12,10 +12,10 @@
  */
 package org.sonatype.nexus.ci.util
 
+import com.sonatype.nexus.api.common.NexusStringUtils
 import com.sonatype.nexus.api.repository.v3.Repository
 
 import hudson.util.ListBoxModel
-import jline.internal.Nullable
 
 import static org.sonatype.nexus.ci.config.GlobalNexusConfiguration.getGlobalNexusConfiguration
 import static org.sonatype.nexus.ci.config.NxrmVersion.NEXUS_3
@@ -42,9 +42,10 @@ class Nxrm3Util
    * the provided format.
    */
   static List<Repository> getApplicableRepositories(final String serverUrl, final String credentialsId,
-                                                    @Nullable final String format) {
+                                                    final String format = null) {
     nexus3Client(serverUrl, credentialsId).getRepositories()
-        .findAll { ('hosted'.equalsIgnoreCase(it.type)) && (format != null ? format.equalsIgnoreCase(it.format) : true)}
+        .findAll { ('hosted'.equalsIgnoreCase(it.type)) && (NexusStringUtils.isNotBlank(format) ?
+        format.equalsIgnoreCase(it.format) : true)}
   }
 
   /**
@@ -57,6 +58,6 @@ class Nxrm3Util
       throw new IllegalArgumentException('Specified Nexus Repository Manager instance is not a 3.x server')
     }
     newListBoxModel({ it.name }, { it.name },
-        getApplicableRepositories(configuration.serverUrl, configuration.credentialsId, null))
+        getApplicableRepositories(configuration.serverUrl, configuration.credentialsId))
   }
 }

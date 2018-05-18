@@ -85,7 +85,7 @@ class Nxrm3UtilTest
       client.getRepositories() >> repositories
 
     when:
-      def fetchedRepos = Nxrm3Util.getApplicableRepositories('foo', 'bar', null)
+      def fetchedRepos = Nxrm3Util.getApplicableRepositories('foo', 'bar')
 
     then:
       fetchedRepos.size() == 5

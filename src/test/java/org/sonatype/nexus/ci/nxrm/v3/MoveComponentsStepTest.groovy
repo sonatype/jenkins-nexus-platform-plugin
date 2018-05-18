@@ -223,11 +223,9 @@ class MoveComponentsStepTest
   }
 
   def getProject(String instance, String destination, String tag, Closure clientReturn = { nxrm3Client }) {
-
     def config = createNxrm3Config(instance)
     def project = jenkinsRule.createFreeStyleProject()
     def builder = new MoveComponentsStep(instance, tag, destination)
-
     project.getBuildersList().add(builder)
 
     GroovyMock(RepositoryManagerClientUtil.class, global: true)
@@ -238,9 +236,7 @@ class MoveComponentsStepTest
 
   //Prepares a workflow job
   def getWorkflowProject(String instance, String destination, String tagName, Closure clientReturn = { nxrm3Client }) {
-
     def config = createNxrm3Config(instance)
-
     def project = jenkinsRule.createProject(WorkflowJob.class, "nexusStagingMove")
     project.setDefinition(new CpsFlowDefinition("node {moveComponents destination: '" + destination +
         "', nexusInstanceId: '" + instance +"', tagName: '" + tagName + "'}"))
