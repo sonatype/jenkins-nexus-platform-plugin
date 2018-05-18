@@ -62,7 +62,7 @@ public class MoveComponentsStep
   private final String destination;
 
   @DataBoundConstructor
-  public MoveComponentsStep(final String nexusInstanceId,  final String tagName, final String destination)
+  public MoveComponentsStep(final String nexusInstanceId, final String tagName, final String destination)
   {
     this.nexusInstanceId = checkArgument(nexusInstanceId, isNotBlank(nexusInstanceId),
         Common_Validation_NexusInstanceIDRequired());
@@ -116,7 +116,7 @@ public class MoveComponentsStep
       return true;
     }
 
-    public FormValidation doCheckNexusInstanceId(@QueryParameter String value) {
+    public FormValidation doCheckNexusInstanceId(@QueryParameter final String value) {
       return NxrmUtil.doCheckNexusInstanceId(value);
     }
 
@@ -124,15 +124,15 @@ public class MoveComponentsStep
       return NxrmUtil.doFillNexusInstanceIdItems(NxrmVersion.NEXUS_3);
     }
 
-    public FormValidation doCheckDestination(@QueryParameter String value) {
+    public FormValidation doCheckDestination(@QueryParameter final String value) {
       return NxrmUtil.doCheckNexusRepositoryId(value);
     }
 
-    public ListBoxModel doFillDestinationItems(@QueryParameter String nexusInstanceId) {
+    public ListBoxModel doFillDestinationItems(@QueryParameter final String nexusInstanceId) {
       return Nxrm3Util.doFillNexusHostedRepositoryIdItems(nexusInstanceId);
     }
 
-    public FormValidation doCheckTagName(@QueryParameter String tagName) {
+    public FormValidation doCheckTagName(@QueryParameter final String tagName) {
       return FormUtil.validateNotEmpty(tagName, Common_Validation_Staging_TagNameRequired());
     }
   }

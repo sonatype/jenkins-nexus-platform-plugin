@@ -127,7 +127,6 @@ class MoveComponentsStepTest
 
   def 'it fails to complete a move operation based on a tag'() {
     setup:
-
       def project = getProject('localhost', 'maven-releases', 'foo',
           { throw new RepositoryManagerException("Move failed") })
 
@@ -166,7 +165,6 @@ class MoveComponentsStepTest
 
   def 'it fails to complete a move operation based on a tag as a workflow'() {
       setup:
-
         def project = getWorkflowProject('localhost', 'maven-releases', 'foo'
             , { throw new RepositoryManagerException("Move failed") })
 

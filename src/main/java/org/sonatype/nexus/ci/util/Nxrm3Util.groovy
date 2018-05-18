@@ -17,6 +17,7 @@ import com.sonatype.nexus.api.repository.v3.Repository
 
 import hudson.util.ListBoxModel
 
+import static com.sonatype.nexus.api.common.NexusStringUtils.isNotBlank
 import static org.sonatype.nexus.ci.config.GlobalNexusConfiguration.getGlobalNexusConfiguration
 import static org.sonatype.nexus.ci.config.NxrmVersion.NEXUS_3
 import static org.sonatype.nexus.ci.util.FormUtil.newListBoxModel
@@ -44,7 +45,7 @@ class Nxrm3Util
   static List<Repository> getApplicableRepositories(final String serverUrl, final String credentialsId,
                                                     final String format = null) {
     nexus3Client(serverUrl, credentialsId).getRepositories()
-        .findAll { ('hosted'.equalsIgnoreCase(it.type)) && (NexusStringUtils.isNotBlank(format) ?
+        .findAll { ('hosted'.equalsIgnoreCase(it.type)) && (isNotBlank(format) ?
         format.equalsIgnoreCase(it.format) : true)}
   }
 
