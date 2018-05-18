@@ -19,7 +19,7 @@ def l = namespace(lib.LayoutTagLib)
 
 l.css(src: "plugin/nexus-jenkins-plugin/css/nexus.css")
 
-f.section(title: descriptor.displayName) {
+f.section() {
   if (!NxrmUtil.hasNexusRepositoryManagerConfiguration()) {
     tr {
       td(class: 'setting-leftspace') {

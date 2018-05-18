@@ -23,6 +23,7 @@ import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client;
 
 import org.sonatype.nexus.ci.config.NxrmVersion;
 import org.sonatype.nexus.ci.util.FormUtil;
+import org.sonatype.nexus.ci.util.Nxrm3Util;
 import org.sonatype.nexus.ci.util.NxrmUtil;
 
 import hudson.Extension;
@@ -128,7 +129,7 @@ public class MoveComponentsStep
     }
 
     public ListBoxModel doFillDestinationItems(@QueryParameter String nexusInstanceId) {
-      return NxrmUtil.doFillNexusRepositoryIdItems(nexusInstanceId);
+      return Nxrm3Util.doFillNexusHostedRepositoryIdItems(nexusInstanceId);
     }
 
     public FormValidation doCheckTagName(@QueryParameter String tagName) {
