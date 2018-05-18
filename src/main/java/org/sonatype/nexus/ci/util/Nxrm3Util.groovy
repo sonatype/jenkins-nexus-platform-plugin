@@ -26,6 +26,8 @@ class Nxrm3Util
 {
   private static final String INSTANCE_IS_NOT_NXRM3 = 'Specified Nexus Repository Manager instance is not a 3.x server'
 
+  public static final String MAVEN2 = 'maven2'
+
   /**
    * Return Nexus repositories which are applicable for package upload. These are maven2 hosted repositories.
    */
@@ -36,7 +38,7 @@ class Nxrm3Util
       throw new IllegalArgumentException(INSTANCE_IS_NOT_NXRM3)
     }
 
-    getApplicableRepositories(configuration.serverUrl, configuration.credentialsId, 'maven2')
+    getApplicableRepositories(configuration.serverUrl, configuration.credentialsId, MAVEN2)
   }
 
   /**

@@ -23,6 +23,8 @@ import org.sonatype.nexus.ci.util.RepositoryManagerClientUtil
 import hudson.util.FormValidation
 import hudson.util.FormValidation.Kind
 
+import static org.sonatype.nexus.ci.util.Nxrm3Util.MAVEN2
+
 class Nxrm3ConfigurationTest
     extends NxrmConfigurationDescriptorTest
 {
@@ -102,7 +104,7 @@ class Nxrm3ConfigurationTest
       descriptor.doVerifyCredentials(serverUrl, credentialsId)
 
     then:
-      1 * Nxrm3Util.getApplicableRepositories(serverUrl, null, 'maven2')
+      1 * Nxrm3Util.getApplicableRepositories(serverUrl, null, MAVEN2)
 
     where:
       serverUrl << ['serverUrl']
