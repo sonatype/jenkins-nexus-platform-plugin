@@ -396,7 +396,7 @@ class IqPolicyEvaluatorTest
           'Summary of policy violations: 0 critical, 0 severe, 0 moderate')
   }
 
-  def 'Resource not found exception handling'() {
+  def 'Auto App Creation not supported by IQ Server'() {
     setup:
       iqClient.verifyOrCreateApplication(*_) >> { throw exception }
       def buildStep = new IqPolicyEvaluatorBuildStep('stage', new SelectedApplication('appId'),
