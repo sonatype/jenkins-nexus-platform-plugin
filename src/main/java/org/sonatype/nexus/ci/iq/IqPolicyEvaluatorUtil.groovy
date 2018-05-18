@@ -50,8 +50,20 @@ class IqPolicyEvaluatorUtil
           new IqClientFactoryConfiguration(credentialsId: iqPolicyEvaluator.jobCredentialsId, context: run.parent,
               log: loggerBridge))
 
-      def verified = iqClient.verifyOrCreateApplication(applicationId)
-      checkArgument(verified, 'The application ID ' + applicationId + ' is invalid.')
+      try {
+        def verified = iqClient.verifyOrCreateApplication(applicationId)
+        checkArgument(verified, 'The application ID ' + applicationId + ' is invalid.')
+      }
+      catch (IqClientException e) {
+        if (isHttp404Error(e)) {
+          listener.logger.println Messages._IqPolicyEvaluation_ResourceNotFound()
+          run.result = Result.FAILURE
+          return null
+        }
+        else {
+          throw e
+        }
+      }
 
       def envVars = run.getEnvironment(listener)
       def expandedScanPatterns = getScanPatterns(iqPolicyEvaluator.iqScanPatterns, envVars)
@@ -91,11 +103,6 @@ class IqPolicyEvaluatorUtil
     def isNetworkError = isNetworkError(e)
     if (!isNetworkError || failBuildOnNetworkError) {
       throw e
-    }
-    else if (isHttp404Error(e)) {
-      listener.logger.println Messages._IqPolicyEvaluation_ResourceNotFound()
-      run.result = Result.FAILURE
-      return null
     }
     else {
       listener.logger.println ExceptionUtils.getStackTrace(e)
