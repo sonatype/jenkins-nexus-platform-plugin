@@ -24,6 +24,7 @@ import hudson.Launcher
 import hudson.model.Result
 import hudson.model.Run
 import hudson.model.TaskListener
+import org.apache.commons.httpclient.HttpStatus
 import org.apache.commons.lang.exception.ExceptionUtils
 import org.apache.http.client.HttpResponseException
 
@@ -116,7 +117,7 @@ class IqPolicyEvaluatorUtil
     if (httpResponseExceptionIndex >= 0) {
       Throwable[] throwables = ExceptionUtils.getThrowables(throwable)
       HttpResponseException httpResponseException = (HttpResponseException) throwables[httpResponseExceptionIndex]
-      return httpResponseException.statusCode == 404
+      return httpResponseException.statusCode == HttpStatus.SC_NOT_FOUND
     }
     return false
   }
