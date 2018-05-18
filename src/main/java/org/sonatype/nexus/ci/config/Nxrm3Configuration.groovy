@@ -23,6 +23,7 @@ import static hudson.util.FormValidation.error
 import static hudson.util.FormValidation.ok
 import static org.sonatype.nexus.ci.config.NxrmConfiguration.NxrmDescriptor
 import static org.sonatype.nexus.ci.config.NxrmVersion.NEXUS_3
+import static org.sonatype.nexus.ci.util.Nxrm3Util.MAVEN2
 import static org.sonatype.nexus.ci.util.Nxrm3Util.getApplicableRepositories
 
 class Nxrm3Configuration
@@ -62,7 +63,7 @@ class Nxrm3Configuration
         throws IOException
     {
       try {
-        def repositories = getApplicableRepositories(serverUrl, credentialsId, 'maven2')
+        def repositories = getApplicableRepositories(serverUrl, credentialsId, MAVEN2)
         ok("Nexus Repository Manager 3.x connection succeeded (${repositories.size()} hosted Maven 2 repositories)")
       }
       catch (RepositoryManagerException e) {
