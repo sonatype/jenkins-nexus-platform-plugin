@@ -63,7 +63,7 @@ class Nxrm3Configuration
     {
       try {
         def repositories = getApplicableRepositories(serverUrl, credentialsId, 'maven2')
-        ok("Nexus Repository Manager 3.x connection succeeded (${repositories.size()} hosted repositories)")
+        ok("Nexus Repository Manager 3.x connection succeeded (${repositories.size()} hosted maven2 repositories)")
       }
       catch (RepositoryManagerException e) {
         error(e, 'Nexus Repository Manager 3.x connection failed')
