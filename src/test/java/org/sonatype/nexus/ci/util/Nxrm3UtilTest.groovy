@@ -33,7 +33,7 @@ class Nxrm3UtilTest
   def setup() {
     GroovyMock(RepositoryManagerClientUtil.class, global: true)
     RepositoryManagerClientUtil.nexus3Client(_) >> client
-    RepositoryManagerClientUtil.nexus3Client(_, _, _) >> client
+    RepositoryManagerClientUtil.nexus3Client(_, _) >> client
   }
 
   def 'getsReposUsingValidInstance'() {
@@ -41,7 +41,7 @@ class Nxrm3UtilTest
       def globalConfiguration = GlobalNexusConfiguration.globalNexusConfiguration
       globalConfiguration.nxrmConfigs = []
       globalConfiguration.nxrmConfigs.
-          add(new Nxrm3Configuration('id', 'internalId', 'displayName', 'http://foo.com', 'credId', true))
+          add(new Nxrm3Configuration('id', 'internalId', 'displayName', 'http://foo.com', 'credId'))
       globalConfiguration.save()
 
       client.getRepositories() >> repositories
@@ -80,12 +80,105 @@ class Nxrm3UtilTest
       thrown.message == 'Specified Nexus Repository Manager instance is not a 3.x server'
   }
 
+  def 'getAllHostedRepos'() {
+    setup:
+      client.getRepositories() >> repositories
+
+    when:
+      def fetchedRepos = Nxrm3Util.getApplicableRepositories('foo', 'bar')
+
+    then:
+      fetchedRepos.size() == 5
+      fetchedRepos.equals([
+          [
+              name  : 'Maven Releases',
+              format: 'maven2',
+              type  : 'hosted',
+              url   : 'http://foo.com/repository/maven-releases'
+          ],
+          [
+              name  : 'Maven Snapshots',
+              format: 'maven2',
+              type  : 'hosted',
+              url   : 'http://foo.com/repository/maven-snapshots'
+          ],
+          [
+              name  : 'Maven 1 Releases',
+              format: 'maven1',
+              type  : 'hosted',
+              url   : 'http://foo.com/repository/maven-1-releases'
+          ],
+          [
+              name  : 'Npm Releases',
+              format: 'npm',
+              type  : 'hosted',
+              url   : 'http://foo.com/repository/npm-releases'
+          ],
+          [
+              name  : 'Raw Hosted',
+              format: 'raw',
+              type  : 'hosted',
+              url   : 'http://foo.com/repository/raw-hosted'
+
+          ]
+      ])
+
+    where:
+      repositories << [
+          [
+              [
+                  name  : 'Maven Releases',
+                  format: 'maven2',
+                  type  : 'hosted',
+                  url   : 'http://foo.com/repository/maven-releases'
+              ],
+              [
+                  name  : 'Maven Snapshots',
+                  format: 'maven2',
+                  type  : 'hosted',
+                  url   : 'http://foo.com/repository/maven-snapshots'
+              ],
+              [
+                  name  : 'Maven 1 Releases',
+                  format: 'maven1',
+                  type  : 'hosted',
+                  url   : 'http://foo.com/repository/maven-1-releases'
+              ],
+              [
+                  name  : 'Npm Releases',
+                  format: 'npm',
+                  type  : 'hosted',
+                  url   : 'http://foo.com/repository/npm-releases'
+              ],
+              [
+                  name  : 'SomeNugetProxy',
+                  format: 'nuget',
+                  type  : 'proxy',
+                  url   : 'http://foo.com/repository/some-nuget-proxy'
+              ],
+              [
+                  name  : 'Proxy Maven',
+                  format: 'maven2',
+                  type  : 'proxy',
+                  url   : 'http://foo.com/repository/proxy-maven'
+              ],
+              [
+                  name  : 'Raw Hosted',
+                  format: 'raw',
+                  type  : 'hosted',
+                  url   : 'http://foo.com/repository/raw-hosted'
+
+              ]
+          ]
+      ]
+  }
+
   def 'getsOnlyMaven2HostedRepos'() {
     setup:
       client.getRepositories() >> repositories
 
     when:
-      def fetchedRepos = Nxrm3Util.getApplicableRepositories('foo', 'bar', true)
+      def fetchedRepos = Nxrm3Util.getApplicableRepositories('foo', 'bar', 'maven2')
 
     then:
       fetchedRepos.size() == 3
@@ -107,6 +200,67 @@ class Nxrm3UtilTest
               format: 'maven2',
               type  : 'hosted',
               url   : 'http://foo.com/repository/other-maven-releases'
+          ]
+      ])
+
+    where:
+      repositories << [
+          [
+              [
+                  name  : 'Maven Releases',
+                  format: 'maven2',
+                  type  : 'hosted',
+                  url   : 'http://foo.com/repository/maven-releases'
+              ],
+              [
+                  name  : 'Maven Snapshots',
+                  format: 'maven2',
+                  type  : 'hosted',
+                  url   : 'http://foo.com/repository/maven-snapshots'
+              ],
+              [
+                  name  : 'Maven 1 Releases',
+                  format: 'maven1',
+                  type  : 'hosted',
+                  url   : 'http://foo.com/repository/maven-1-releases'
+              ],
+              [
+                  name  : 'Npm Releases',
+                  format: 'npm',
+                  type  : 'hosted',
+                  url   : 'http://foo.com/repository/npm-releases'
+              ],
+              [
+                  name  : 'Other Maven Releases',
+                  format: 'maven2',
+                  type  : 'hosted',
+                  url   : 'http://foo.com/repository/other-maven-releases'
+              ],
+              [
+                  name  : 'Proxy Maven',
+                  format: 'maven2',
+                  type  : 'proxy',
+                  url   : 'http://foo.com/repository/proxy-maven'
+              ]
+          ]
+      ]
+  }
+
+  def 'getsOnlyNpmHostedRepos'() {
+    setup:
+      client.getRepositories() >> repositories
+
+    when:
+      def fetchedRepos = Nxrm3Util.getApplicableRepositories('foo', 'bar', 'npm')
+
+    then:
+      fetchedRepos.size() == 1
+      fetchedRepos.equals([
+          [
+              name  : 'Npm Releases',
+              format: 'npm',
+              type  : 'hosted',
+              url   : 'http://foo.com/repository/npm-releases'
           ]
       ])
 

@@ -53,8 +53,7 @@ class ComponentUploaderNxrm3
             .withPackaging(envVars.expand(mavenCoordinate.packaging))
 
         remoteMavenAssets.eachWithIndex { remoteMavenAsset, idx ->
-          def asset = new DefaultAsset("asset${idx}", remoteMavenAsset.RemotePath.getRemote(),
-              remoteMavenAsset.RemotePath.read())
+          def asset = new DefaultAsset(remoteMavenAsset.RemotePath.getRemote(), remoteMavenAsset.RemotePath.read())
 
           mavenComponentBuilder.withAsset(asset, envVars.expand(remoteMavenAsset.Asset.extension),
               envVars.expand(remoteMavenAsset.Asset.classifier))
@@ -87,7 +86,7 @@ class ComponentUploaderNxrm3
       checkArgument(nxrmConfiguration.class == Nxrm3Configuration.class,
           'Nexus Repository Manager 3.x server is required')
       Nxrm3Configuration nxrm3Configuration = nxrmConfiguration as Nxrm3Configuration
-      nexus3Client(nxrm3Configuration.serverUrl, nxrm3Configuration.credentialsId, nxrm3Configuration.anonymousAccess)
+      nexus3Client(nxrm3Configuration.serverUrl, nxrm3Configuration.credentialsId)
     }
     catch (Exception e) {
       logger.println('Error creating RepositoryManagerClient')
