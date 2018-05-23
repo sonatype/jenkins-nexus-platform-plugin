@@ -160,7 +160,7 @@ class MoveComponentsStepTest
 
     then:
       //Verify the move call only happens 1 time signaling the second step never gets executed
-      1 * nxrm3Client.move(destination, 'foo') >> { throw new RepositoryManagerException("Move failed") }
+      1 * nxrm3Client.move(destination, _) >> { throw new RepositoryManagerException("Move failed") }
       jenkinsRule.assertBuildStatus(Result.FAILURE, build)
       jenkinsRule.assertLogContains("Move failed", build)
   }
@@ -187,7 +187,7 @@ class MoveComponentsStepTest
 
     then:
       //Verify the move call only happens 1 time signaling the second step never gets executed
-      1 * nxrm3Client.move(destination, 'foo') >> { throw new RepositoryManagerException("Move failed") }
+      1 * nxrm3Client.move(destination, _) >> { throw new RepositoryManagerException("Move failed") }
       jenkinsRule.assertBuildStatus(Result.FAILURE, build)
       jenkinsRule.assertLogContains("Move failed", build)
   }
