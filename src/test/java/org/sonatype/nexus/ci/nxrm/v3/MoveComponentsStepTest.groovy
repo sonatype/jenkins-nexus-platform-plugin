@@ -174,10 +174,13 @@ class MoveComponentsStepTest
       def project = jenkinsRule.createProject(WorkflowJob.class, "nexusStagingMove")
 
       //We set up the workflow with 2 move steps...we should only see the first one called
-      project.setDefinition(new CpsFlowDefinition("node { moveComponents destination: '" + destination +
-          "', nexusInstanceId: '" + instance +"', tagName: '" + tagName + "'" +
-          "moveComponents destination: '" +  destination + "', nexusInstanceId: '" + instance +
-          "', tagName: '" + tagName + "'} "))
+      project.setDefinition(new CpsFlowDefinition(
+          "node { " +
+          "\nmoveComponents destination: '" + destination + "', nexusInstanceId: '" + instance +"', tagName: '" +
+              tagName + "'" +
+          "\nmoveComponents destination: '" + destination + "', nexusInstanceId: '" + instance +"', tagName: '" +
+              tagName + "'" +
+          "}"))
 
       GroovyMock(RepositoryManagerClientUtil.class, global: true)
       RepositoryManagerClientUtil.nexus3Client(config.serverUrl, config.credentialsId) >> nxrm3Client
