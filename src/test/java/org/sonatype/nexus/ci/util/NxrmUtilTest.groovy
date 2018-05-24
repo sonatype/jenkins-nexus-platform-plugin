@@ -32,10 +32,10 @@ class NxrmUtilTest
 
   def 'it populates the list of destination repositories for NXRM3'() {
     setup:
-      GroovyMock(RepositoryManagerClientUtil.class, global: true)
+      GroovyMock(RepositoryManagerClientUtil, global: true)
       def nxrmConfiguration = createNxrmConfig()
 
-      def client = Mock(RepositoryManagerV3Client.class)
+      def client = Mock(RepositoryManagerV3Client)
       def repositories = [
           [
               name            : 'Maven Releases',
@@ -71,7 +71,7 @@ class NxrmUtilTest
       client.getRepositories() >> repositories
       RepositoryManagerClientUtil.nexus3Client(nxrmConfiguration.serverUrl, nxrmConfiguration.credentialsId) >> client
 
-    when: 'retrieve the list of repositories to populat the list box'
+    when: 'retrieve the list of repositories to populate the list box'
       def listBoxModel = NxrmUtil.doFillNexusRepositoryIdItems('nxrm3')
 
     then: 'ListBox has the correct size'
@@ -91,10 +91,10 @@ class NxrmUtilTest
 
   def 'it populates the list of destination repositories for NXRM2'() {
     setup:
-      GroovyMock(RepositoryManagerClientUtil.class, global: true)
+      GroovyMock(RepositoryManagerClientUtil, global: true)
       def nxrmConfiguration = createNxrmConfig('nxrm2')
 
-      def client = Mock(RepositoryManagerV2Client.class)
+      def client = Mock(RepositoryManagerV2Client)
       def repositories = [
           [
               id              : 'maven-releases',
@@ -154,8 +154,8 @@ class NxrmUtilTest
   }
 
   //get a config, defaults to nxrm3
-  def createNxrmConfig(String id = 'nxrm3') {
-    def configurationList = new ArrayList<NxrmConfiguration>()
+  NxrmConfiguration createNxrmConfig(String id = 'nxrm3') {
+    def configurationList = []
     def nxrmConfiguration
     if (id == 'nxrm2') {
       nxrmConfiguration = new Nxrm2Configuration(id, "internal${id}", 'displayName', 'http://foo.com', 'credentialsId')
@@ -163,7 +163,7 @@ class NxrmUtilTest
       nxrmConfiguration = new Nxrm3Configuration(id, "internal${id}", 'displayName', 'http://foo.com', 'credentialsId')
     }
 
-    configurationList.push(nxrmConfiguration)
+    configurationList <<  nxrmConfiguration
 
     def globalConfiguration = jenkins.getInstance().getDescriptorByType(GlobalNexusConfiguration)
     globalConfiguration.nxrmConfigs = configurationList
