@@ -27,12 +27,14 @@ import spock.lang.Specification
 class NxrmUtilTest
     extends Specification
 {
+  static final GLOBAL = [global: true] as Map<String, Object>
+
   @Rule
   protected JenkinsRule jenkins = new JenkinsRule()
 
   def 'it populates the list of destination repositories for NXRM3'() {
     setup:
-      GroovyMock(RepositoryManagerClientUtil, global: true)
+      GroovyMock(GLOBAL, RepositoryManagerClientUtil)
       def nxrmConfiguration = createNxrmConfig()
 
       def client = Mock(RepositoryManagerV3Client)
@@ -91,7 +93,7 @@ class NxrmUtilTest
 
   def 'it populates the list of destination repositories for NXRM2'() {
     setup:
-      GroovyMock(RepositoryManagerClientUtil, global: true)
+      GroovyMock(GLOBAL, RepositoryManagerClientUtil)
       def nxrmConfiguration = createNxrmConfig('nxrm2')
 
       def client = Mock(RepositoryManagerV2Client)
