@@ -28,8 +28,12 @@ import hudson.util.FormValidation
 import hudson.util.ListBoxModel
 import jenkins.tasks.SimpleBuildStep
 import org.kohsuke.stapler.DataBoundConstructor
+import org.kohsuke.stapler.DataBoundSetter
 import org.kohsuke.stapler.QueryParameter
+import org.kohsuke.stapler.bind.JavaScriptMethod
 
+import static hudson.util.FormValidation.ok
+import static org.sonatype.nexus.ci.config.NxrmVersion.NEXUS_3
 import static org.sonatype.nexus.ci.nxrm.ComponentUploaderFactory.getComponentUploader
 
 class NexusPublisherBuildStep
@@ -42,6 +46,8 @@ class NexusPublisherBuildStep
 
   List<Package> packages
 
+  private String tagName
+
   @DataBoundConstructor
   NexusPublisherBuildStep(final String nexusInstanceId, final String nexusRepositoryId, final List<Package> packages) {
     this.nexusInstanceId = nexusInstanceId
@@ -49,11 +55,20 @@ class NexusPublisherBuildStep
     this.packages = packages ?: []
   }
 
+  String getTagName() {
+    tagName
+  }
+
+  @DataBoundSetter
+  void setTagName(final String tagName) {
+    this.tagName = tagName?.trim() ? tagName : null
+  }
+
   @Override
   void perform(@Nonnull final Run run, @Nonnull final FilePath workspace, @Nonnull final Launcher launcher,
                @Nonnull final TaskListener listener) throws InterruptedException, IOException
   {
-    getComponentUploader(nexusInstanceId, run, listener).uploadComponents(this, workspace)
+    getComponentUploader(nexusInstanceId, run, listener).uploadComponents(this, workspace, tagName)
   }
 
   @Extension
@@ -71,20 +86,34 @@ class NexusPublisherBuildStep
       true
     }
 
+    @Override
     FormValidation doCheckNexusInstanceId(@QueryParameter String value) {
       NxrmUtil.doCheckNexusInstanceId(value)
     }
 
+    @Override
     ListBoxModel doFillNexusInstanceIdItems() {
       NxrmUtil.doFillNexusInstanceIdItems()
     }
 
+    @Override
     FormValidation doCheckNexusRepositoryId(@QueryParameter String value) {
       NxrmUtil.doCheckNexusRepositoryId(value)
     }
 
+    @Override
     ListBoxModel doFillNexusRepositoryIdItems(@QueryParameter String nexusInstanceId) {
       NxrmUtil.doFillNexusRepositoryIdItems(nexusInstanceId)
+    }
+
+    @SuppressWarnings('UnusedMethodParameter')
+    FormValidation doCheckTagName(@QueryParameter String tagName) {
+      ok()
+    }
+
+    @JavaScriptMethod
+    static String getTagVisibility(final String id) {
+      NxrmUtil.isVersion(id, NEXUS_3) ? 'visible' : 'hidden'
     }
   }
 }
