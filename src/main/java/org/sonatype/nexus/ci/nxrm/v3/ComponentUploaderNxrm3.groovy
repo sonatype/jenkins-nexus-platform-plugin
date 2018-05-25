@@ -17,7 +17,6 @@ import javax.annotation.Nullable
 import com.sonatype.nexus.api.exception.RepositoryManagerException
 import com.sonatype.nexus.api.repository.v3.DefaultAsset
 import com.sonatype.nexus.api.repository.v3.RepositoryManagerV3Client
-import com.sonatype.nexus.api.repository.v3.Tag
 import com.sonatype.nexus.api.repository.v3.formats.maven.MavenComponentBuilder
 
 import org.sonatype.nexus.ci.config.Nxrm3Configuration
@@ -41,10 +40,7 @@ class ComponentUploaderNxrm3
   void maybeCreateTag(@Nullable final String tagName) {
     if (tagName?.trim()) {
       def nxrmClient = getRepositoryManagerClient(nxrmConfiguration)
-      Optional<Tag> existingTag = nxrmClient.getTag(tagName)
-      if (!existingTag.isPresent()) {
-        nxrmClient.createTag(tagName)
-      }
+      nxrmClient.getTag(tagName).orElse(nxrmClient.createTag(tagName))
     }
   }
 

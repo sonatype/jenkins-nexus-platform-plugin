@@ -178,12 +178,14 @@ class ComponentUploaderNxrm3Test
       String repo = null
       Component component = null
       String tag = null
+      def expectedCreateTag = expectedTagName ? 1 : 0
 
     when:
       mockComponentUploader.uploadComponents(publisher, filePath, tagName)
       tempFile.delete()
 
     then:
+      expectedCreateTag * client.createTag(tagName)
       1 * client.upload(*_) >> { args ->
         repo = args[0]
         component = args[1]

@@ -24,7 +24,6 @@ import org.kohsuke.stapler.DataBoundSetter
 import org.kohsuke.stapler.QueryParameter
 import org.kohsuke.stapler.bind.JavaScriptMethod
 
-import static hudson.util.FormValidation.ok
 import static org.sonatype.nexus.ci.config.NxrmVersion.NEXUS_3
 
 class NexusPublisherWorkflowStep
@@ -96,11 +95,6 @@ class NexusPublisherWorkflowStep
     @Override
     ListBoxModel doFillNexusRepositoryIdItems(@QueryParameter String nexusInstanceId) {
       NxrmUtil.doFillNexusRepositoryIdItems(nexusInstanceId)
-    }
-
-    @SuppressWarnings('UnusedMethodParameter')
-    FormValidation doCheckTagName(@QueryParameter String tagName) {
-      ok()
     }
 
     @JavaScriptMethod
