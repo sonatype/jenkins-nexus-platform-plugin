@@ -19,6 +19,7 @@ import hudson.util.FormValidation
 import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.QueryParameter
 
+import static hudson.util.FormValidation.Kind.OK
 import static hudson.util.FormValidation.error
 import static hudson.util.FormValidation.ok
 import static org.sonatype.nexus.ci.config.NxrmConfiguration.NxrmDescriptor
@@ -68,6 +69,37 @@ class Nxrm3Configuration
       catch (RepositoryManagerException e) {
         error(e, 'Nexus Repository Manager 3.x connection failed')
       }
+    }
+
+    @Override
+    FormValidation doCheckServerUrl(@QueryParameter String value) {
+      def validation = super.doCheckServerUrl(value)
+
+      if (validation.kind != OK) {
+        return validation
+      }
+
+      // check nexus version, warn if < 3.13.0 PRO
+      try {
+        def response = new XmlSlurper().parseText(new URL("${value}/service/rest/wonderland/status").text)
+        def edition = response.edition.text()
+        def version = response.version.text()
+        def (major, minor) = version.tokenize('.').take(2).collect { it as int }
+
+        if (!edition.equalsIgnoreCase('pro') || major < 3 || minor < 13) {
+          return FormValidation.warning(
+              "NXRM ${edition} ${version} found. Some operations require a Professional Edition Nexus Repository " +
+                  "Manager server of version 3.13.0 or newer; use of an incompatible server will result in failed " +
+                  "builds")
+        }
+      }
+      catch (Exception e) {
+        return FormValidation.warning(
+            'Unable to determine Nexus Repository Manager version. Certain operations may not be compatible with your' +
+                ' server which could result in failed builds.')
+      }
+
+      ok()
     }
   }
 }
