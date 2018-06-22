@@ -22,7 +22,6 @@ import org.sonatype.nexus.ci.util.RepositoryManagerClientUtil
 
 import hudson.util.FormValidation
 import hudson.util.FormValidation.Kind
-import spock.lang.Unroll
 
 class Nxrm3ConfigurationTest
     extends NxrmConfigurationDescriptorTest
