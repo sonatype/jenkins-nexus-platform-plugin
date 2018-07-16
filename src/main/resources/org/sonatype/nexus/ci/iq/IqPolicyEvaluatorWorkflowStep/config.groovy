@@ -12,6 +12,7 @@
  */
 package org.sonatype.nexus.ci.iq.IqPolicyEvaluatorWorkflowStep
 
+import org.sonatype.nexus.ci.config.GitHubConfiguration
 import org.sonatype.nexus.ci.config.NxiqConfiguration
 import org.sonatype.nexus.ci.iq.IqApplication
 import org.sonatype.nexus.ci.iq.Messages
@@ -86,6 +87,21 @@ f.section(title: descriptor.displayName) {
             method: 'verifyCredentials',
             with: 'jobCredentialsId'
         )
+      }
+
+      if (GitHubConfiguration.gitHubConfig) {
+        f.entry(title: _(Messages.IqPolicyEvaluation_GitHubJobSpecificCredentials()), field: 'gitHubJobCredentialsId') {
+          c.select(context: app, includeUser: false, expressionAllowed: false)
+        }
+
+        f.block() {
+          f.validateButton(
+              title: _(org.sonatype.nexus.ci.config.Messages.Configuration_TestConnection()),
+              progress: _('Testing...'),
+              method: 'verifyGitHubCredentials',
+              with: 'gitHubJobCredentialsId'
+          )
+        }
       }
     }
   }

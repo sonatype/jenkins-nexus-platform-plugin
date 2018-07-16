@@ -10,21 +10,13 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.sonatype.nexus.ci.iq
+package org.sonatype.nexus.ci.github;
 
-interface IqPolicyEvaluator
+class GitHubUser
 {
-  String getIqStage()
+  public String login
 
-  IqApplication getIqApplication()
-
-  List<ScanPattern> getIqScanPatterns()
-
-  List<ModuleExclude> getModuleExcludes()
-
-  Boolean getFailBuildOnNetworkError()
-
-  String getJobCredentialsId()
-
-  String getGitHubJobCredentialsId()
+  GitHubUser(Map json) {
+    this.login = json.login
+  }
 }

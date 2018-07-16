@@ -29,6 +29,8 @@ class GlobalNexusConfiguration
 
   List<NxiqConfiguration> iqConfigs
 
+  List<GitHubConfiguration> gitHubConfigs
+
   String instanceId
 
   GlobalNexusConfiguration() {
@@ -40,9 +42,13 @@ class GlobalNexusConfiguration
   }
 
   @DataBoundConstructor
-  GlobalNexusConfiguration(final List<NxrmConfiguration> nxrmConfigs, final List<NxiqConfiguration> iqConfigs) {
+  GlobalNexusConfiguration(final List<NxrmConfiguration> nxrmConfigs,
+                           final List<NxiqConfiguration> iqConfigs,
+                           final List<GitHubConfiguration> gitHubConfigs)
+  {
     this.nxrmConfigs = nxrmConfigs ?: []
     this.iqConfigs = iqConfigs ?: []
+    this.gitHubConfigs = gitHubConfigs ?: []
   }
 
   @Override
@@ -50,6 +56,7 @@ class GlobalNexusConfiguration
     def globalConfiguration = req.bindJSON(GlobalNexusConfiguration, json)
     this.nxrmConfigs = globalConfiguration.nxrmConfigs
     this.iqConfigs = globalConfiguration.iqConfigs
+    this.gitHubConfigs = globalConfiguration.gitHubConfigs
     save()
     return true
   }
@@ -59,8 +66,8 @@ class GlobalNexusConfiguration
     return 'Sonatype Nexus'
   }
 
-  static @Nullable getGlobalNexusConfiguration() {
-    return all().get(GlobalNexusConfiguration)
+  static @Nullable GlobalNexusConfiguration getGlobalNexusConfiguration() {
+    return (GlobalNexusConfiguration)all().get(GlobalNexusConfiguration)
   }
 
   static String getInstanceId() {

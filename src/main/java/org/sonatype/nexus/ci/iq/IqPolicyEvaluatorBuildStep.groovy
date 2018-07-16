@@ -16,8 +16,10 @@ import javax.annotation.Nonnull
 import javax.annotation.Nullable
 import javax.annotation.ParametersAreNonnullByDefault
 
+import org.sonatype.nexus.ci.config.GitHubConfiguration
 import org.sonatype.nexus.ci.config.NxiqConfiguration
 import org.sonatype.nexus.ci.util.FormUtil
+import org.sonatype.nexus.ci.util.GitHubUtil
 import org.sonatype.nexus.ci.util.IqUtil
 
 import hudson.Extension
@@ -53,6 +55,8 @@ class IqPolicyEvaluatorBuildStep
 
   String jobCredentialsId
 
+  String gitHubJobCredentialsId
+
   @DataBoundConstructor
   @SuppressWarnings('ParameterCount')
   IqPolicyEvaluatorBuildStep(final String iqStage,
@@ -60,7 +64,8 @@ class IqPolicyEvaluatorBuildStep
                              final List<ScanPattern> iqScanPatterns,
                              final List<ModuleExclude> moduleExcludes,
                              final Boolean failBuildOnNetworkError,
-                             final String jobCredentialsId)
+                             final String jobCredentialsId,
+                             final String gitHubJobCredentialsId)
   {
     this.jobCredentialsId = jobCredentialsId
     this.failBuildOnNetworkError = failBuildOnNetworkError
@@ -68,6 +73,7 @@ class IqPolicyEvaluatorBuildStep
     this.moduleExcludes = moduleExcludes
     this.iqStage = iqStage
     this.iqApplication = iqApplication
+    this.gitHubJobCredentialsId = gitHubJobCredentialsId
   }
 
   @Override
@@ -121,14 +127,27 @@ class IqPolicyEvaluatorBuildStep
 
     @Override
     ListBoxModel doFillJobCredentialsIdItems(@AncestorInPath Job job) {
-      FormUtil.newCredentialsItemsListBoxModel(NxiqConfiguration.serverUrl.toString(), NxiqConfiguration.credentialsId,
-        job)
+      FormUtil.newUsernamePasswordAndCertificateCredentialsItems(NxiqConfiguration.serverUrl.toString(),
+          NxiqConfiguration.credentialsId, job)
     }
 
     @Override
     FormValidation doVerifyCredentials(@QueryParameter @Nullable String jobCredentialsId, @AncestorInPath Job job)
     {
       IqUtil.verifyJobCredentials(jobCredentialsId, job)
+    }
+
+    @Override
+    ListBoxModel doFillGitHubJobCredentialsIdItems(@AncestorInPath final Job job) {
+      FormUtil.newUsernamePasswordAndCertificateCredentialsItems(GitHubConfiguration.serverUrl.toString(),
+          GitHubConfiguration.credentialsId, job)
+    }
+
+    @Override
+    FormValidation doVerifyGitHubCredentials(@QueryParameter @Nullable String gitHubJobCredentialsId,
+                                             @AncestorInPath Job job)
+    {
+      GitHubUtil.verifyJobCredentials(gitHubJobCredentialsId, job)
     }
   }
 }

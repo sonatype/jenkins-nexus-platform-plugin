@@ -31,4 +31,8 @@ interface IqPolicyEvaluatorDescriptor
   ListBoxModel doFillJobCredentialsIdItems(Job job)
 
   FormValidation doVerifyCredentials(String jobCredentialsId, Job job)
+
+  ListBoxModel doFillGitHubJobCredentialsIdItems(Job job)
+
+  FormValidation doVerifyGitHubCredentials(String gitHubJobCredentialsId, Job job)
 }
