@@ -108,7 +108,7 @@ abstract class NxrmConfiguration
     }
 
     ListBoxModel doFillCredentialsIdItems(@QueryParameter String serverUrl, @QueryParameter String credentialsId) {
-      return FormUtil.newCredentialsItemsListBoxModel(serverUrl, credentialsId, null)
+      return FormUtil.newUsernamePasswordCredentialsItems(serverUrl, credentialsId, null)
     }
   }
 }

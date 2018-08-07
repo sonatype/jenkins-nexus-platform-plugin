@@ -15,12 +15,9 @@ package org.sonatype.nexus.ci.config
 import com.sonatype.nexus.api.exception.RepositoryManagerException
 
 import org.sonatype.nexus.ci.config.NxrmConfiguration.NxrmDescriptor
-import org.sonatype.nexus.ci.util.FormUtil
 
 import hudson.Extension
 import hudson.util.FormValidation
-import hudson.util.FormValidation.Kind
-import hudson.util.ListBoxModel
 import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.QueryParameter
 
@@ -60,45 +57,8 @@ class Nxrm2Configuration
       return 'Nexus Repository Manager 2.x Server'
     }
 
-    FormValidation doCheckDisplayName(@QueryParameter String value, @QueryParameter String internalId) {
-      def globalConfigurations = GlobalNexusConfiguration.globalNexusConfiguration
-      for (NxrmConfiguration config : globalConfigurations.nxrmConfigs) {
-        if (config.internalId != internalId && config.displayName == value) {
-          return FormValidation.error('Display Name must be unique')
-        }
-      }
-      return FormUtil.validateNotEmpty(value, 'Display Name is required')
-    }
-
-    FormValidation doCheckId(@QueryParameter String value, @QueryParameter String internalId) {
-      def globalConfigurations = GlobalNexusConfiguration.globalNexusConfiguration
-      for (NxrmConfiguration config : globalConfigurations.nxrmConfigs) {
-        if (config.internalId != internalId && config.id == value) {
-          return FormValidation.error('Server ID must be unique')
-        }
-      }
-      def validation = FormUtil.validateNoWhitespace(value, 'Server ID must not contain whitespace')
-      if (validation.kind == Kind.OK) {
-        validation = FormUtil.validateNotEmpty(value, 'Server ID is required')
-      }
-      return validation
-    }
-
-    FormValidation doCheckServerUrl(@QueryParameter String value) {
-      def validation = FormUtil.validateUrl(value)
-      if (validation.kind == Kind.OK) {
-        validation = FormUtil.validateNotEmpty(value, 'Server Url is required')
-      }
-      return validation
-    }
-
-    ListBoxModel doFillCredentialsIdItems(@QueryParameter String serverUrl, @QueryParameter String credentialsId) {
-      return FormUtil.newUsernamePasswordCredentialsItems(serverUrl, credentialsId, null)
-    }
-
-    FormValidation doVerifyCredentials(
-        @QueryParameter String serverUrl,
-        @QueryParameter String credentialsId) throws IOException
+    FormValidation doVerifyCredentials(@QueryParameter String serverUrl, @QueryParameter String credentialsId)
+        throws IOException
     {
       try {
         def repositories = getApplicableRepositories(serverUrl, credentialsId)
