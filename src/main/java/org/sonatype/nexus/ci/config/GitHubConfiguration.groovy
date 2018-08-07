@@ -15,7 +15,7 @@ package org.sonatype.nexus.ci.config
 import javax.annotation.Nullable
 
 import org.sonatype.nexus.ci.util.FormUtil
-import org.sonatype.nexus.ci.util.IqUtil
+import org.sonatype.nexus.ci.util.GitHubUtil
 
 import hudson.Extension
 import hudson.model.Describable
@@ -27,48 +27,47 @@ import jenkins.model.Jenkins
 import org.kohsuke.stapler.DataBoundConstructor
 import org.kohsuke.stapler.QueryParameter
 
-class NxiqConfiguration
-    implements Describable<NxiqConfiguration>
+import static org.sonatype.nexus.ci.config.GlobalNexusConfiguration.getGlobalNexusConfiguration
+
+class GitHubConfiguration
+    implements Describable<GitHubConfiguration>
 {
   String serverUrl
-
-  @Deprecated
-  boolean isPkiAuthentication
 
   String credentialsId
 
   @DataBoundConstructor
-  NxiqConfiguration(final String serverUrl, final String credentialsId)
+  GitHubConfiguration(final String serverUrl, final String credentialsId)
   {
     this.serverUrl = serverUrl
     this.credentialsId = credentialsId
   }
 
   @Override
-  Descriptor<NxiqConfiguration> getDescriptor() {
+  Descriptor<GitHubConfiguration> getDescriptor() {
     return Jenkins.getInstance().getDescriptorOrDie(this.getClass())
   }
 
   static @Nullable URI getServerUrl() {
-    def serverUrl = getIqConfig()?.@serverUrl
+    def serverUrl = getGitHubConfig()?.@serverUrl
     serverUrl ? new URI(serverUrl) : null
   }
 
   static @Nullable String getCredentialsId() {
-    getIqConfig()?.@credentialsId
+    getGitHubConfig()?.@credentialsId
   }
 
-  static @Nullable NxiqConfiguration getIqConfig() {
-    return GlobalNexusConfiguration.globalNexusConfiguration.iqConfigs?.find { true }
+  static @Nullable GitHubConfiguration getGitHubConfig() {
+    return globalNexusConfiguration.gitHubConfigs?.find { true }
   }
 
   @Extension
   static class DescriptorImpl
-      extends Descriptor<NxiqConfiguration>
+      extends Descriptor<GitHubConfiguration>
   {
     @Override
     String getDisplayName() {
-      Messages.NxiqConfiguration_DisplayName()
+      Messages.GitHubConfiguration_DisplayName()
     }
 
     @SuppressWarnings('unused')
@@ -83,7 +82,7 @@ class NxiqConfiguration
     @SuppressWarnings('unused')
     ListBoxModel doFillCredentialsIdItems(@QueryParameter String serverUrl,
                                           @QueryParameter String credentialsId) {
-      return FormUtil.newUsernamePasswordAndCertificateCredentialsItems(serverUrl, credentialsId, null)
+      return FormUtil.newUsernamePasswordCredentialsItems(serverUrl, credentialsId, null)
     }
 
     @SuppressWarnings('unused')
@@ -91,7 +90,7 @@ class NxiqConfiguration
         @QueryParameter String serverUrl,
         @QueryParameter @Nullable String credentialsId) throws IOException
     {
-      return IqUtil.verifyJobCredentials(serverUrl, credentialsId, Jenkins.instance)
+      return GitHubUtil.verifyJobCredentials(serverUrl, credentialsId, Jenkins.instance)
     }
   }
 }

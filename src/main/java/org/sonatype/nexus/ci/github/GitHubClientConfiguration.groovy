@@ -10,21 +10,15 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.sonatype.nexus.ci.iq
+package org.sonatype.nexus.ci.github
 
-interface IqPolicyEvaluator
+import hudson.model.ModelObject
+
+class GitHubClientConfiguration
 {
-  String getIqStage()
+  URI serverUrl
 
-  IqApplication getIqApplication()
+  String credentialsId
 
-  List<ScanPattern> getIqScanPatterns()
-
-  List<ModuleExclude> getModuleExcludes()
-
-  Boolean getFailBuildOnNetworkError()
-
-  String getJobCredentialsId()
-
-  String getGitHubJobCredentialsId()
+  ModelObject context
 }

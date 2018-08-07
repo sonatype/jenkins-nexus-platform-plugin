@@ -45,6 +45,12 @@ class IqPolicyEvaluatorUtil
       LoggerBridge loggerBridge = new LoggerBridge(listener)
       loggerBridge.debug(Messages.IqPolicyEvaluation_Evaluating())
 
+      def envVars = run.getEnvironment(listener)
+      def policyEvaluationNotifier = new PolicyEvaluationNotifier(run, envVars,
+          iqPolicyEvaluator.gitHubJobCredentialsId)
+
+      policyEvaluationNotifier.notifyEvaluationBegun()
+
       def iqClient = IqClientFactory.getIqClient(
           new IqClientFactoryConfiguration(credentialsId: iqPolicyEvaluator.jobCredentialsId, context: run.parent,
               log: loggerBridge))
@@ -52,7 +58,6 @@ class IqPolicyEvaluatorUtil
       def verified = iqClient.verifyOrCreateApplication(applicationId)
       checkArgument(verified, 'The application ID ' + applicationId + ' is invalid.')
 
-      def envVars = run.getEnvironment(listener)
       def expandedScanPatterns = getScanPatterns(iqPolicyEvaluator.iqScanPatterns, envVars)
       def expandedModuleExcludes = getExpandedModuleExcludes(iqPolicyEvaluator.moduleExcludes, envVars)
 
@@ -64,15 +69,14 @@ class IqPolicyEvaluatorUtil
 
       def evaluationResult = iqClient.evaluateApplication(applicationId, iqPolicyEvaluator.iqStage, scanResult)
 
-      def healthAction = new PolicyEvaluationHealthAction(run, evaluationResult)
-      run.addAction(healthAction)
-
       Result result = handleEvaluationResult(evaluationResult, listener, applicationId)
       run.setResult(result)
       if (result == Result.FAILURE) {
+        policyEvaluationNotifier.notifyEvaluationFailure(evaluationResult)
         throw new PolicyEvaluationException(Messages.IqPolicyEvaluation_EvaluationFailed(applicationId),
             evaluationResult)
       }
+      policyEvaluationNotifier.notifyEvaluationSuccess(evaluationResult)
 
       return evaluationResult
     }

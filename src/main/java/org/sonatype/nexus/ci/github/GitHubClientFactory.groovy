@@ -10,37 +10,22 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.sonatype.nexus.ci.iq
+package org.sonatype.nexus.ci.github
 
-import com.sonatype.nexus.api.iq.internal.InternalIqClient
-import com.sonatype.nexus.api.iq.internal.InternalIqClientBuilder
-
-import org.sonatype.nexus.ci.config.NxiqConfiguration
+import org.sonatype.nexus.ci.config.GitHubConfiguration
 import org.sonatype.nexus.ci.util.ServerConfigurationUtil
 
 import jenkins.model.Jenkins
-import org.slf4j.Logger
 
-class IqClientFactory
+class GitHubClientFactory
 {
-  static InternalIqClient getIqClient(IqClientFactoryConfiguration conf = new IqClientFactoryConfiguration()) {
-    def serverUrl = conf.serverUrl ?: NxiqConfiguration.serverUrl
-    def context = conf.context ?: Jenkins.instance
-    def credentialsId = conf.credentialsId ?: NxiqConfiguration.credentialsId
+  static GitHubClient getGitHubClient(GitHubClientConfiguration configuration = new GitHubClientConfiguration()) {
+    def serverUrl = configuration.serverUrl ?: GitHubConfiguration.serverUrl
+    def context = configuration.context ?: Jenkins.instance
+    def credentialsId = configuration.credentialsId ?: GitHubConfiguration.credentialsId
     def credentials = ServerConfigurationUtil.findCredentials(serverUrl, credentialsId, context)
     def serverConfig = ServerConfigurationUtil.getServerConfig(serverUrl, credentials)
     def proxyConfig = ServerConfigurationUtil.getProxyConfig(serverUrl)
-    return (InternalIqClient) InternalIqClientBuilder.create()
-        .withServerConfig(serverConfig)
-        .withProxyConfig(proxyConfig)
-        .withLogger(conf.log)
-        .build()
-  }
-
-  static InternalIqClient getIqLocalClient(Logger log, String instanceId) {
-    return (InternalIqClient) InternalIqClientBuilder.create()
-        .withInstanceId(instanceId)
-        .withLogger(log)
-        .build()
+    return new GitHubClient(serverConfig, proxyConfig)
   }
 }

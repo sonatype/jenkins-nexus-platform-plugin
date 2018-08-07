@@ -10,36 +10,28 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.sonatype.nexus.ci.config.GlobalNexusConfiguration
+package org.sonatype.nexus.ci.config.NxiqConfiguration
 
 import org.sonatype.nexus.ci.config.Messages
 
 def f = namespace(lib.FormTagLib)
+def c = namespace(lib.CredentialsTagLib)
 
 f.section(title: descriptor.displayName) {
-  f.entry(title: _('Nexus Repository Manager Servers')) {
-    f.repeatableHeteroProperty(
-        field: 'nxrmConfigs',
-        addCaption: _('Add Nexus Repository Manager Server')
-    )
+  f.entry(title: _(Messages.Configuration_ServerUrl()), field: 'serverUrl') {
+    f.textbox(clazz: 'required', default: 'https://api.github.com')
   }
 
-  f.entry(title: _('Nexus IQ Server')) {
-    f.repeatableHeteroProperty(
-        field: 'iqConfigs',
-        addCaption: _('Add Nexus IQ Server'),
-        oneEach: 'true'
-    )
+  f.entry(title: _(Messages.Configuration_Credentials()), field: 'credentialsId') {
+    c.select(context:app, includeUser:false, expressionAllowed:false)
   }
 
-  f.advanced() {
-    f.section(title: _(Messages.Configuration_SourceControl())) {
-      f.entry(title: _('GitHub Server')) {
-        f.repeatableHeteroProperty(
-            field: 'gitHubConfigs',
-            addCaption: _('Add GitHub Server'),
-            oneEach: 'true')
-      }
-    }
+  f.block() {
+    f.validateButton(
+        title: _(Messages.Configuration_TestConnection()),
+        progress: _('Testing...'),
+        method: 'verifyCredentials',
+        with: 'serverUrl,credentialsId'
+    )
   }
 }

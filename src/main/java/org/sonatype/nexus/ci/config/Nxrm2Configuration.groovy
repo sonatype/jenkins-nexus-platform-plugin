@@ -57,7 +57,6 @@ class Nxrm2Configuration
       return 'Nexus Repository Manager 2.x Server'
     }
 
-    @Override
     FormValidation doVerifyCredentials(@QueryParameter String serverUrl, @QueryParameter String credentialsId)
         throws IOException
     {

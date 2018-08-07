@@ -12,6 +12,7 @@
  */
 package org.sonatype.nexus.ci.util
 
+import com.cloudbees.plugins.credentials.CredentialsMatcher
 import com.cloudbees.plugins.credentials.CredentialsProvider
 import com.cloudbees.plugins.credentials.common.StandardCertificateCredentials
 import com.cloudbees.plugins.credentials.common.StandardCredentials
@@ -60,9 +61,26 @@ class FormUtil
     return FormValidation.ok()
   }
 
-  static ListBoxModel newCredentialsItemsListBoxModel(final String serverUrl,
-                                                      final String credentialsId,
-                                                      final Item ancestor)
+  static ListBoxModel newUsernamePasswordCredentialsItems(final String serverUrl,
+                                                          final String credentialsId,
+                                                          final Item ancestor)
+  {
+    return newCredentialsItems(serverUrl, credentialsId, ancestor,
+        anyOf(instanceOf(StandardUsernamePasswordCredentials)))
+  }
+
+  static ListBoxModel newUsernamePasswordAndCertificateCredentialsItems(final String serverUrl,
+                                                                        final String credentialsId,
+                                                                        final Item ancestor)
+  {
+    return newCredentialsItems(serverUrl, credentialsId, ancestor,
+        anyOf(instanceOf(StandardUsernamePasswordCredentials), instanceOf(StandardCertificateCredentials)))
+  }
+
+  private static ListBoxModel newCredentialsItems(final String serverUrl,
+                                                  final String credentialsId,
+                                                  final Item ancestor,
+                                                  CredentialsMatcher credentialsTypes)
   {
     // Ref: https://github.com/jenkinsci/credentials-plugin/blob/master/docs/consumer.adoc
     boolean noContextNotAdmin = ancestor == null && !Jenkins.getInstance().hasPermission(Jenkins.ADMINISTER)
@@ -79,7 +97,7 @@ class FormUtil
           ancestor ?: Jenkins.instance,
           StandardCredentials,
           fromUri(serverUrl).build(),
-          anyOf(instanceOf(StandardUsernamePasswordCredentials), instanceOf(StandardCertificateCredentials)))
+          credentialsTypes)
   }
 
   static ListBoxModel newListBoxModel(Closure<String> nameSelector, Closure<String> valueSelector, List items)
