@@ -231,7 +231,6 @@ class IqPolicyEvaluatorIntegrationTest
       def build = project.scheduleBuild2(0).get()
 
     then: 'an exception is thrown when getting proprietary config from IQ server'
-      //1 * iqClient.validateServerVersion(*_)
       1 * iqClient.verifyOrCreateApplication(*_) >> true
       1 * iqClient.getProprietaryConfigForApplicationEvaluation('app') >> {
         throw new IqClientException("ERROR", new IOException("BANG!"))
@@ -253,7 +252,6 @@ class IqPolicyEvaluatorIntegrationTest
       def build = project.scheduleBuild2(0).get()
 
     then: 'an exception is thrown when getting proprietary config from IQ server'
-      //1 * iqClient.validateServerVersion(*_)
       1 * iqClient.verifyOrCreateApplication(*_) >> true
       1 * iqClient.getProprietaryConfigForApplicationEvaluation('app') >> {
         throw new IqClientException("ERROR", new IOException("BANG!"))
@@ -299,7 +297,6 @@ class IqPolicyEvaluatorIntegrationTest
       def build = project.scheduleBuild2(0).get()
 
     then: 'an exception is thrown when getting proprietary config from IQ server'
-      //1 * iqClient.validateServerVersion(*_)
       1 * iqClient.verifyOrCreateApplication(*_) >> true
       1 * iqClient.getProprietaryConfigForApplicationEvaluation('app') >> { throw exception }
 
@@ -350,7 +347,6 @@ class IqPolicyEvaluatorIntegrationTest
       def build = project.scheduleBuild2(0).get()
 
     then: 'the application is scanned and evaluated'
-      //1 * iqClient.validateServerVersion(*_)
       1 * iqClient.verifyOrCreateApplication(*_) >> true
       1 * iqClient.scan(*_) >> new ScanResult(new Scan(), File.createTempFile('dummy-scan', '.xml.gz'))
       1 * iqClient.evaluateApplication(*_) >> new ApplicationPolicyEvaluation(0, 1, 2, 3, 0,
@@ -389,7 +385,6 @@ class IqPolicyEvaluatorIntegrationTest
       def build = project.scheduleBuild2(0).get()
 
     then: 'the application is scanned and evaluated'
-      //1 * iqClient.validateServerVersion(*_)
       1 * iqClient.verifyOrCreateApplication(*_) >> true
       1 * iqClient.scan(*_) >> new ScanResult(new Scan(), File.createTempFile('dummy-scan', '.xml.gz'))
       1 * iqClient.evaluateApplication(*_) >> new ApplicationPolicyEvaluation(0, 1, 2, 3, 0,
