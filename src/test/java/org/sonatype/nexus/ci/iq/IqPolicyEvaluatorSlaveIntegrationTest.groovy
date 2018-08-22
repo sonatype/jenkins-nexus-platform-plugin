@@ -66,11 +66,11 @@ class IqPolicyEvaluatorSlaveIntegrationTest
     givenThat(post(urlMatching('/rest/integration/applications/verifyOrCreate/.*'))
         .willReturn(okJson('true')))
     givenThat(get(urlMatching('/rest/product/version'))
-        .willReturn(okJson('{"tag": "1e64d778447fc30e4f509f9ca965c5bbe7aa8fd3",' +
-        '"version": "' + serverVersion + '",' +
-        '"name": "sonatype-clm-server",' +
-        '"timestamp": "201807111516",' +
-        '"build": "build-number"}')))
+        .willReturn(okJson("""{"tag": "1e64d778447fc30e4f509f9ca965c5bbe7aa8fd3",
+        "version": "${serverVersion}",
+        "name": "sonatype-clm-server",
+        "timestamp": "201807111516",
+        "build": "build-number"}""")))
   }
 
   def configureJenkins() {
@@ -129,7 +129,7 @@ class IqPolicyEvaluatorSlaveIntegrationTest
     when: 'the build is scheduled'
       def build = project.scheduleBuild2(0).get()
 
-    then: 'the return code is successful'
+    then: 'the return code is failure'
       jenkins.assertBuildStatus(Result.FAILURE, build)
   }
 
@@ -143,11 +143,10 @@ class IqPolicyEvaluatorSlaveIntegrationTest
       configureIqServerMock()
 
     when: 'the build is scheduled'
-      project.definition = new CpsFlowDefinition("node ('${slave.getNodeName()}') {\n" +
-          "writeFile file: 'dummy.txt', text: 'dummy'\n" +
-          "nexusPolicyEvaluation failBuildOnNetworkError: false, iqApplication: \'app\' " +
-          ", iqStage: 'stage'\n" +
-          "}\n")
+      project.definition = new CpsFlowDefinition("""node ('${slave.getNodeName()}') {
+          writeFile file: 'dummy.txt', text: 'dummy'
+          nexusPolicyEvaluation failBuildOnNetworkError: false, iqApplication: 'app', iqStage: 'stage'
+          }\n""")
       def build = project.scheduleBuild2(0).get()
 
     then: 'the return code is successful'
@@ -164,18 +163,17 @@ class IqPolicyEvaluatorSlaveIntegrationTest
       configureIqServerMock(incrementVersion(IqPolicyEvaluatorUtil.MINIMAL_SERVER_VERSION_REQUIRED))
 
     when: 'the build is scheduled'
-      project.definition = new CpsFlowDefinition("node ('${slave.getNodeName()}') {\n" +
-          "writeFile file: 'dummy.txt', text: 'dummy'\n" +
-          "nexusPolicyEvaluation failBuildOnNetworkError: false, iqApplication: \'app\' " +
-          ", iqStage: 'stage'\n" +
-          "}\n")
+      project.definition = new CpsFlowDefinition("""node ('${slave.getNodeName()}') {
+          writeFile file: 'dummy.txt', text: 'dummy'
+          nexusPolicyEvaluation failBuildOnNetworkError: false, iqApplication: 'app', iqStage: 'stage'
+          }\n""")
       def build = project.scheduleBuild2(0).get()
 
     then: 'the return code is successful'
       jenkins.assertBuildStatusSuccess(build)
   }
 
-  def 'Should perform a pipeline build on slave with older server version'() {
+  def 'Should not perform a pipeline build on slave with older server version'() {
     given: 'a jenkins project'
       WorkflowJob project = jenkins.createProject(WorkflowJob)
       Slave slave = jenkins.createSlave()
@@ -185,29 +183,28 @@ class IqPolicyEvaluatorSlaveIntegrationTest
       configureIqServerMock(decrementVersion(IqPolicyEvaluatorUtil.MINIMAL_SERVER_VERSION_REQUIRED))
 
     when: 'the build is scheduled'
-      project.definition = new CpsFlowDefinition("node ('${slave.getNodeName()}') {\n" +
-          "writeFile file: 'dummy.txt', text: 'dummy'\n" +
-          "nexusPolicyEvaluation failBuildOnNetworkError: false, iqApplication: \'app\' " +
-          ", iqStage: 'stage'\n" +
-          "}\n")
+      project.definition = new CpsFlowDefinition("""node ('${slave.getNodeName()}') {
+          writeFile file: 'dummy.txt', text: 'dummy'
+          nexusPolicyEvaluation failBuildOnNetworkError: false, iqApplication: 'app', iqStage: 'stage'
+          }\n""")
       def build = project.scheduleBuild2(0).get()
 
-    then: 'the return code is successful'
+    then: 'the return code is failure'
       jenkins.assertBuildStatus(Result.FAILURE, build)
   }
 
   private String decrementVersion(String version) {
-    int dotAt = version.indexOf(".")
+    int dotAt = version.indexOf('.')
     if (dotAt > 0) {
-      return (Integer.valueOf(version.substring(0, dotAt)) - 1) + "." + version.substring(dotAt + 1)
+      return (Integer.valueOf(version.substring(0, dotAt)) - 1) + '.' + version.substring(dotAt + 1)
     }
     return String.valueOf(Integer.valueOf(version) - 1)
   }
 
   private String incrementVersion(String version) {
-    int dotAt = version.indexOf(".")
+    int dotAt = version.indexOf('.')
     if (dotAt > 0) {
-      return (Integer.valueOf(version.substring(0, dotAt)) + 1) + "." + version.substring(dotAt + 1)
+      return (Integer.valueOf(version.substring(0, dotAt)) + 1) + '.' + version.substring(dotAt + 1)
     }
     return String.valueOf(Integer.valueOf(version) + 1)
   }
