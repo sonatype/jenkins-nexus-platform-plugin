@@ -175,7 +175,7 @@ abstract class IqPolicyEvaluatorDescriptorTest
       // this is a bit odd, but because we're mixing Groovy and Java classes SelectedApplication, we can't
       // use GroovyMock to verify interactions.  What we are testing here is that IqUtil.doFillIqApplicationItems
       // was invoked with 'credentialsId'.  Since the Jenkins credential hasn't been created
-      // IqUtil.doFillIqApplicationItems will throw throw an exception, and then we can check the exception message
+      // IqUtil.doFillIqApplicationItems will throw an exception, and then we can check the exception message
       // to make sure that IqUtil.doFillIqApplicationItems received the expected parameter.
       IllegalArgumentException ex = thrown()
       ex.message == 'No credentials were found for credentials credentialsId'
