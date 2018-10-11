@@ -15,10 +15,7 @@
 # Nexus Platform Plugin
 
 A plugin for integrating Nexus Repository Manager and Nexus Lifecycle into a Jenkins job. Information about using the
-plugin with Nexus Repository Manager can be found in the
-[Nexus RM Documentation](https://help.sonatype.com/display/NXRM2/Jenkins). Information about using the plugin with
-Nexus Lifecycle can be found in the
-[Nexus IQ Documentation](https://help.sonatype.com/integrations/nexus-and-continuous-integration/nexus-platform-plugin-for-jenkins#NexusPlatformPluginforJenkins-NexusIQServerIntegration).
+plugin can be found [here](https://help.sonatype.com/integrations/nexus-and-continuous-integration/nexus-platform-plugin-for-jenkins).
 
 ## LICENSE ##
 
