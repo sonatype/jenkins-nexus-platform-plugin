@@ -54,7 +54,7 @@
 
   <properties>
     <enforcer.skip>true</enforcer.skip> <!-- TODO numerous requireUpperBoundDeps, some probably indicative of real problems -->
-    <jenkins.version>2.7</jenkins.version>
+    <jenkins.version>2.60.3</jenkins.version>
     <findbugs-maven-plugin.version>3.0.2</findbugs-maven-plugin.version>
     <jvnet-localizer-plugin.version>1.23</jvnet-localizer-plugin.version>
     <forkCount>1</forkCount>
