@@ -3,4 +3,4 @@
  * Includes the third-party code listed at http://links.sonatype.com/products/nexus/attributions.
  * "Sonatype" is a trademark of Sonatype, Inc.
  */
-buildPlugin(jdkVersions: [11])
+buildPlugin()
