@@ -187,7 +187,7 @@ class IqClientFactoryTest
   def 'it uses job specific credentialsId when provided'() {
     setup:
       final String serverUrl = 'http://localhost/'
-      final String credentialsId = '123-cred-456'
+      String credentialsId = '123-cred-456'
 
       def globalConfiguration = GlobalNexusConfiguration.globalNexusConfiguration
       def nxiqConfiguration = new NxiqConfiguration(serverUrl, credentialsId)
@@ -213,7 +213,7 @@ class IqClientFactoryTest
   def 'it uses configured proxy when configured'() {
     setup:
       final String serverUrl = 'http://localhost/'
-      final String credentialsId = '123-cred-456'
+      String credentialsId = '123-cred-456'
 
       def globalConfiguration = GlobalNexusConfiguration.globalNexusConfiguration
       def nxiqConfiguration = new NxiqConfiguration(serverUrl, credentialsId)
@@ -259,7 +259,7 @@ class IqClientFactoryTest
   def 'it uses configured proxy with authentication when configured'() {
     setup:
       final String serverUrl = 'http://localhost/'
-      final String credentialsId = '123-cred-456'
+      String credentialsId = '123-cred-456'
 
       def globalConfiguration = GlobalNexusConfiguration.globalNexusConfiguration
       def nxiqConfiguration = new NxiqConfiguration(serverUrl, credentialsId)

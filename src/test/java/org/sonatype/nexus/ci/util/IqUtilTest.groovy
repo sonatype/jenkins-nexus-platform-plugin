@@ -40,7 +40,7 @@ class IqUtilTest
   def 'doFillIqApplicationItems populates Iq Application items'() {
     setup:
       final String serverUrl = 'http://localhost/'
-      final String credentialsId = 'credentialsId'
+      String credentialsId = 'credentialsId'
 
       def globalConfiguration = GlobalNexusConfiguration.globalNexusConfiguration
       def nxiqConfiguration = new NxiqConfiguration(serverUrl, credentialsId)
@@ -88,7 +88,7 @@ class IqUtilTest
   def 'doFillIqApplicationItems uses jobSpecificCredentialsId'() {
     setup:
       final String serverUrl = 'http://localhost/'
-      final String credentialsId = 'credentialsId'
+      String credentialsId = 'credentialsId'
 
       def globalConfiguration = GlobalNexusConfiguration.globalNexusConfiguration
       def nxiqConfiguration = new NxiqConfiguration(serverUrl, credentialsId)
@@ -117,7 +117,7 @@ class IqUtilTest
   def 'doFillIqStageItems populates stage items'() {
     setup:
       final String serverUrl = 'http://localhost/'
-      final String credentialsId = 'credentialsId'
+      String credentialsId = 'credentialsId'
 
       def globalConfiguration = GlobalNexusConfiguration.globalNexusConfiguration
       def nxiqConfiguration = new NxiqConfiguration(serverUrl, credentialsId)
