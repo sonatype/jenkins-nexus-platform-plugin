@@ -321,7 +321,7 @@
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
           <configuration>
-            <skip>true</skip>
+            <sourcepath>${project.basedir}/src/java</sourcepath>
           </configuration>
         </plugin>
         <plugin>
