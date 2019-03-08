@@ -378,6 +378,11 @@
           </configuration>
         </plugin>
         <plugin>
+          <groupId>org.jenkins-ci.tools</groupId>
+          <artifactId>maven-hpi-plugin</artifactId>
+          <extensions>true</extensions>
+        </plugin>
+        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-gpg-plugin</artifactId>
           <version>1.6</version>
