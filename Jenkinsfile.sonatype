@@ -59,6 +59,7 @@ if (!params.isRelease) {
   }
 
   mavenSnapshotPipeline(
+      javaVersion: 'OpenJDK 11',
       notificationSender: postHandler,
       iqPolicyEvaluation: iqPolicyEvaluation
   )
