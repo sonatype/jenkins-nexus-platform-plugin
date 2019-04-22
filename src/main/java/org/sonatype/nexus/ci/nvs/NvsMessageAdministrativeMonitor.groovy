@@ -12,28 +12,15 @@
  */
 package org.sonatype.nexus.ci.nvs
 
-import javax.annotation.Nonnull
-
 import hudson.Extension
-import hudson.model.Action
-import hudson.model.Job
-import jenkins.model.TransientActionFactory
+import hudson.model.AdministrativeMonitor
 
 @Extension
-class NvsMessageActionFactory
-    extends TransientActionFactory<Job>
+class NvsMessageAdministrativeMonitor
+    extends AdministrativeMonitor
 {
   @Override
-  Class<Job> type() {
-    return Job.class
-  }
-
-  @Nonnull
-  @Override
-  Collection<? extends Action> createFor(Job target) {
-    if (NvsMessageUtil.showMessage()) {
-      return Collections.singleton(new NvsMessageAction())
-    }
-    return Collections.emptyList()
+  boolean isActivated() {
+    return NvsMessageUtil.showMessage()
   }
 }
