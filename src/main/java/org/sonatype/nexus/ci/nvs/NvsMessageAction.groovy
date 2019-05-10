@@ -10,27 +10,33 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.sonatype.nexus.ci.iq
+package org.sonatype.nexus.ci.nvs
 
-import hudson.model.Job
-import hudson.util.FormValidation
-import hudson.util.ListBoxModel
+import javax.annotation.CheckForNull
 
-interface IqPolicyEvaluatorDescriptor
+import hudson.model.Action
+
+class NvsMessageAction
+    implements Action
 {
-  FormValidation doCheckIqStage(String value)
+  @CheckForNull
+  @Override
+  String getIconFileName() {
+    // Returns null to prevent an entry in the Project's sidebar
+    return null
+  }
 
-  ListBoxModel doFillIqStageItems(String jobCredentialsId, Job job)
+  @CheckForNull
+  @Override
+  String getDisplayName() {
+    // Returns null to prevent an entry in the Project's sidebar
+    return null
+  }
 
-  FormValidation doCheckScanPattern(String scanPattern)
-
-  FormValidation doCheckAdvancedProperties(String advancedProperties)
-
-  FormValidation doCheckModuleExclude(String moduleExclude)
-
-  FormValidation doCheckFailBuildOnNetworkError(String value)
-
-  ListBoxModel doFillJobCredentialsIdItems(Job job)
-
-  FormValidation doVerifyCredentials(String jobCredentialsId, Job job)
+  @CheckForNull
+  @Override
+  String getUrlName() {
+    // Returns null to prevent an entry in the Project's sidebar
+    return null
+  }
 }

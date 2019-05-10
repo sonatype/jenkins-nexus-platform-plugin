@@ -10,27 +10,30 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.sonatype.nexus.ci.iq
+package org.sonatype.nexus.ci.nvs
 
+import javax.annotation.Nonnull
+
+import hudson.Extension
+import hudson.model.Action
 import hudson.model.Job
-import hudson.util.FormValidation
-import hudson.util.ListBoxModel
+import jenkins.model.TransientActionFactory
 
-interface IqPolicyEvaluatorDescriptor
+@Extension
+class NvsMessageActionFactory
+    extends TransientActionFactory<Job>
 {
-  FormValidation doCheckIqStage(String value)
+  @Override
+  Class<Job> type() {
+    return Job.class
+  }
 
-  ListBoxModel doFillIqStageItems(String jobCredentialsId, Job job)
-
-  FormValidation doCheckScanPattern(String scanPattern)
-
-  FormValidation doCheckAdvancedProperties(String advancedProperties)
-
-  FormValidation doCheckModuleExclude(String moduleExclude)
-
-  FormValidation doCheckFailBuildOnNetworkError(String value)
-
-  ListBoxModel doFillJobCredentialsIdItems(Job job)
-
-  FormValidation doVerifyCredentials(String jobCredentialsId, Job job)
+  @Nonnull
+  @Override
+  Collection<? extends Action> createFor(Job target) {
+    if (NvsMessageUtil.showMessage()) {
+      return Collections.singleton(new NvsMessageAction())
+    }
+    return Collections.emptyList()
+  }
 }

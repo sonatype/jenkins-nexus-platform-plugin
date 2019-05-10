@@ -10,27 +10,17 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.sonatype.nexus.ci.iq
+package org.sonatype.nexus.ci.nvs
 
-import hudson.model.Job
-import hudson.util.FormValidation
-import hudson.util.ListBoxModel
+import hudson.Extension
+import hudson.model.AdministrativeMonitor
 
-interface IqPolicyEvaluatorDescriptor
+@Extension
+class NvsMessageAdministrativeMonitor
+    extends AdministrativeMonitor
 {
-  FormValidation doCheckIqStage(String value)
-
-  ListBoxModel doFillIqStageItems(String jobCredentialsId, Job job)
-
-  FormValidation doCheckScanPattern(String scanPattern)
-
-  FormValidation doCheckAdvancedProperties(String advancedProperties)
-
-  FormValidation doCheckModuleExclude(String moduleExclude)
-
-  FormValidation doCheckFailBuildOnNetworkError(String value)
-
-  ListBoxModel doFillJobCredentialsIdItems(Job job)
-
-  FormValidation doVerifyCredentials(String jobCredentialsId, Job job)
+  @Override
+  boolean isActivated() {
+    return NvsMessageUtil.showMessage()
+  }
 }

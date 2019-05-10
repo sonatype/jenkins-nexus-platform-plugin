@@ -10,27 +10,28 @@
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
-package org.sonatype.nexus.ci.iq
+package org.sonatype.nexus.ci.nvs
 
-import hudson.model.Job
-import hudson.util.FormValidation
-import hudson.util.ListBoxModel
+import spock.lang.Specification
 
-interface IqPolicyEvaluatorDescriptor
+class NvsMessageAdministrativeMonitorTest
+    extends Specification
 {
-  FormValidation doCheckIqStage(String value)
+  def 'isActivated returns true when showMessage is true'() {
+    setup:
+      GroovySpy(NvsMessageUtil, global: true)
+      NvsMessageUtil.showMessage() >> true
+      def monitor = new NvsMessageAdministrativeMonitor()
+    expect:
+      monitor.isActivated()
+  }
 
-  ListBoxModel doFillIqStageItems(String jobCredentialsId, Job job)
-
-  FormValidation doCheckScanPattern(String scanPattern)
-
-  FormValidation doCheckAdvancedProperties(String advancedProperties)
-
-  FormValidation doCheckModuleExclude(String moduleExclude)
-
-  FormValidation doCheckFailBuildOnNetworkError(String value)
-
-  ListBoxModel doFillJobCredentialsIdItems(Job job)
-
-  FormValidation doVerifyCredentials(String jobCredentialsId, Job job)
+  def 'isActivated returns false when showMessage is false'() {
+    setup:
+      GroovySpy(NvsMessageUtil, global: true)
+      NvsMessageUtil.showMessage() >> false
+      def monitor = new NvsMessageAdministrativeMonitor()
+    expect:
+      !monitor.isActivated()
+  }
 }
