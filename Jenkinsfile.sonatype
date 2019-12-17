@@ -13,7 +13,9 @@ properties([
 ])
 
 String getCommitId() {
-  return runSafely('git rev-parse HEAD')
+  def commit = runSafely('git rev-parse HEAD')
+  echo "commitId = $commit"
+  return commit
 }
 
 Map jenkinsMavenConfig() {
