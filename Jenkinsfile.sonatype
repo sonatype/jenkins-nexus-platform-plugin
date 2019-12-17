@@ -5,7 +5,6 @@
  */
 @Library(['ci-pipeline-library', 'jenkins-shared']) _
 import com.sonatype.jenkins.pipeline.GitHub
-import com.sonatype.jenkins.pipeline.OsTools
 
 properties([
     parameters([
@@ -14,7 +13,9 @@ properties([
 ])
 
 String getCommitId() {
-  return OsTools.runSafe(this, 'git rev-parse HEAD')
+  def commit = runSafely('git rev-parse HEAD', true)
+  echo "commitId = $commit"
+  return commit
 }
 
 Map jenkinsMavenConfig() {
@@ -88,7 +89,7 @@ else {
         runSafely 'git config --global user.name Sonatype CI'
         
         commitId = getCommitId()
-        commitDate = OsTools.runSafe(this, "git show -s --format=%cd --date=format:%Y%m%d-%H%M%S ${commitId}")
+        commitDate = runSafely("git show -s --format=%cd --date=format:%Y%m%d-%H%M%S ${commitId}", true)
         pom = readMavenPom file: 'pom.xml'
         version = pom.version.replace("-SNAPSHOT", ".${commitDate}.${commitId.substring(0, 7)}")
         mvnReleaseCommand = "-Darguments=-DskipTests -DreleaseVersion=${version} -DdevelopmentVersion=${pom.version} " +
