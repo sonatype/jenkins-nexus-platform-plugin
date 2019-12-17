@@ -5,6 +5,7 @@
  */
 @Library(['ci-pipeline-library', 'jenkins-shared']) _
 import com.sonatype.jenkins.pipeline.GitHub
+import com.sonatype.jenkins.pipeline.OsTools
 
 properties([
     parameters([
@@ -13,7 +14,7 @@ properties([
 ])
 
 String getCommitId() {
-  def commit = runSafely('git rev-parse HEAD')
+  def commit = OsTools.runSafe(this, 'git rev-parse HEAD')
   echo "commitId = $commit"
   return commit
 }
